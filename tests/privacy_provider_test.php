@@ -225,6 +225,7 @@ final class privacy_provider_test extends provider_testcase {
             'categoryid'   => 0,
             'rating'       => 4,
             'feedback'     => 'Test feedback',
+            'tenant_id'   => 1,
             'timecreated'  => time(),
             'timemodified' => time(),
         ];
@@ -233,6 +234,7 @@ final class privacy_provider_test extends provider_testcase {
         $feedback = (object) [
             'feedbacktext' => 'Excellent course',
             'type'         => 'auto',
+            'tenant_id'   => 1,
             'timecreated'  => time(),
             'timemodified' => time(),
         ];

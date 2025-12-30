@@ -48,18 +48,10 @@ if ($hassiteconfig) {
     ));
 
     // New page of general settings.
-    $settingspage = new admin_settingpage(
+    $ADMIN->add('local_datacurso_ratings_category', new admin_externalpage(
         'local_datacurso_ratings_settings',
-        get_string('generalsettings', 'local_datacurso_ratings')
-    );
-
-    // Checkbox: enabled plugin default in all courses.
-    $settingspage->add(new admin_setting_configcheckbox(
-        'local_datacurso_ratings/enabled',
-        get_string('enableplugin', 'local_datacurso_ratings'),
-        get_string('enableplugin_desc', 'local_datacurso_ratings'),
-        1
+        get_string('generalsettings', 'local_datacurso_ratings'),
+        new moodle_url('/local/datacurso_ratings/admin/setting_tenant.php'),
+        'moodle/site:config'
     ));
-
-    $ADMIN->add('local_datacurso_ratings_category', $settingspage);
 }

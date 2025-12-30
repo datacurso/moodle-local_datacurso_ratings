@@ -33,7 +33,7 @@ class hook_callbacks {
      * @return void
      */
     public static function before_footer_html_generation(before_footer_html_generation $hook): void {
-        global $PAGE, $OUTPUT;
+        global $PAGE, $OUTPUT, $USER;
 
         // Skip if installing or in unsupported layouts.
         if (during_initial_install() || in_array($PAGE->pagelayout, ['maintenance', 'print', 'redirect', 'embedded'])) {
@@ -52,8 +52,16 @@ class hook_callbacks {
 
         $cm = $PAGE->cm;
 
-        // Check if plugin is enabled.
-        if (!get_config('local_datacurso_ratings', 'enabled')) {
+        // Tenant resolution.
+        $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+
+        $enabled = (int) \aiprovider_datacurso\local\tenant_config::get(
+            'local_datacurso_ratings',
+            $tenantid,
+            'enabled'
+        );
+
+        if ($enabled !== 1) {
             return;
         }
 

@@ -54,7 +54,7 @@ class feedback_service extends external_api {
      *  - string message: Confirmation message
      */
     public static function add_feedback($feedbacktext, $type) {
-        global $DB;
+        global $DB, $USER;
 
         self::validate_context(context_system::instance());
         $params = self::validate_parameters(
@@ -63,9 +63,13 @@ class feedback_service extends external_api {
         );
         require_capability('moodle/site:config', context_system::instance());
 
+        // Tenant resolution.
+        $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+
         $record = (object)[
             'feedbacktext' => $params['feedbacktext'],
             'type' => $params['type'],
+            'tenant_id' => $tenantid,
             'timecreated' => time(),
             'timemodified' => time(),
         ];

@@ -89,6 +89,8 @@ class save_rating extends external_api {
             ['cmid' => $cm->id, 'userid' => $USER->id]
         );
 
+        $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+
         $data = (object)[
             'cmid' => $cm->id,
             'userid' => $USER->id,
@@ -96,6 +98,7 @@ class save_rating extends external_api {
             'categoryid' => $categoryid,
             'rating' => $r,
             'feedback' => (string)$params['feedback'],
+            'tenant_id' => $tenantid,
             'timemodified' => $now,
         ];
 

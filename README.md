@@ -1,4 +1,4 @@
-# Ranking Activities AI for Moodle
+# Ranking Activities AI for Moodle Workplace 4.5
 
 The **Ranking Activities AI** plugin empowers students to rate course activities and resources, transforming simple feedback into **meaningful, AI-powered insights** for teachers and administrators.  
 
@@ -16,8 +16,8 @@ Educators can instantly generate AI-based analyses of student engagement and sat
 
 ## Pre-requisites
 
-1. Moodle 4.5  
-2. Install the Moodle AI provider **“DataCurso AI Provider”**. Download it for free from [https://moodle.org/plugins/aiprovider_datacurso/versions](https://moodle.org/plugins/aiprovider_datacurso/versions).  
+1. Moodle 4.5 Workplace
+2. Install the Moodle AI provider for moodle Workplace **“DataCurso AI Provider”**.  
 3. In the **DataCurso AI Provider** settings, configure a valid license key as documented at [https://docs.datacurso.com/index.php?title=Datacurso_AI_Provider#Getting_license_keys](https://docs.datacurso.com/index.php?title=Datacurso_AI_Provider#Getting_license_keys).  
 
 **IMPORTANT:** This plugin will not function unless the **DataCurso AI Provider** plugin is installed and licensed.
@@ -36,7 +36,7 @@ You can also install this plugin manually by copying its contents into:
 {your/moodle/dirroot}/local/datacurso_ratings
 ```
 
-Then log in to your Moodle site as an admin and go to  
+Then log in to your Moodle Workplace site as an admin and go to  
 `Site administration > Notifications` to complete the installation.
 
 Alternatively, from the command line:
@@ -82,15 +82,28 @@ After collecting student ratings, educators can click **“Generate AI Analysis�
 
    ![Settings Ranking](./_docs/images/local_datacurso_ratings_page-settings.png)
 
+### ⚠️IMPORTANT: 
+
+This configuration only applies to the tenant in which it is configured.
+
 4. **Manage Predefined Responses**  
    - This page lets you add predefined responses that students can choose from when rating activities or resources.
 
    ![Manage Feedback](./_docs/images/local_datacurso_ratings_page-gestion-feedback.png)
 
+
+### ⚠️IMPORTANT: 
+
+This predefined responses only applies to the tenant in which it is configured.
+
 5. **General Ratings Report**  
    - On this page, administrators can view a comprehensive report of all student ratings across every course activity.
 
    ![Global Report](./_docs/images/local_datacurso_ratings_report-global-page.png)
+
+### ⚠️IMPORTANT: 
+
+This general report is only of courses of current tenant.
 
    - By clicking the **Generate Analysis** button, the AI will create an analysis based on the global data gathered from all information.
 

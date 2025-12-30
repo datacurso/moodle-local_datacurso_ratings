@@ -50,7 +50,7 @@ class get_ratings_report extends external_api {
      * @return array
      */
     public static function execute() {
-        global $DB;
+        global $DB, $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), []);
 
@@ -69,9 +69,11 @@ class get_ratings_report extends external_api {
             $concatcomments = "GROUP_CONCAT(DISTINCT r.feedback SEPARATOR ' / ') AS comentarios";
         }
 
+        $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+
         // Main SQL query (compatible with both MySQL and PostgreSQL).
-        $sql = "
-            SELECT r.cmid,
+         $sql = "
+           SELECT r.cmid,
                    cm.course,
                    SUM(CASE WHEN r.rating = 1 THEN 1 ELSE 0 END) AS likes,
                    SUM(CASE WHEN r.rating = 0 THEN 1 ELSE 0 END) AS dislikes,
@@ -80,11 +82,16 @@ class get_ratings_report extends external_api {
                    {$concatcomments}
             FROM {local_datacurso_ratings} r
             JOIN {course_modules} cm ON cm.id = r.cmid
+            WHERE r.tenant_id = :tenantid
             GROUP BY r.cmid, cm.course
             ORDER BY cm.course ASC
         ";
 
-        $records = $DB->get_records_sql($sql);
+        $params = [
+            'tenantid' => $tenantid,
+        ];
+
+        $records = $DB->get_records_sql($sql, $params);
         $result = [];
 
         // Cache to reuse modinfo per course.

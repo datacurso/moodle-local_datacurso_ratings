@@ -94,5 +94,23 @@ function xmldb_local_datacurso_ratings_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2025101504, 'local', 'datacurso_ratings');
     }
 
+    if ($oldversion < 2025122910) {
+        $table = new xmldb_table('local_datacurso_ratings_feedback');
+        $field = new xmldb_field('tenant_id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'type');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_plugin_savepoint(true, 2025122910, 'local', 'datacurso_ratings');
+    }
+
+    if ($oldversion < 2025122920) {
+        $table = new xmldb_table('local_datacurso_ratings');
+        $field = new xmldb_field('tenant_id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'userid');
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        upgrade_plugin_savepoint(true, 2025122920, 'local', 'datacurso_ratings');
+    }
+
     return true;
 }
