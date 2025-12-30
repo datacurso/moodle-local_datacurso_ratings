@@ -50,6 +50,7 @@ class provider implements
                 'categoryid'   => 'privacy:metadata:local_datacurso_ratings:categoryid',
                 'rating'       => 'privacy:metadata:local_datacurso_ratings:rating',
                 'feedback'     => 'privacy:metadata:local_datacurso_ratings:feedback',
+                'tenant_id'    => 'privacy:metadata:local_datacurso_ratings:tenant_id',
                 'timecreated'  => 'privacy:metadata:local_datacurso_ratings:timecreated',
                 'timemodified' => 'privacy:metadata:local_datacurso_ratings:timemodified',
             ],
@@ -61,6 +62,7 @@ class provider implements
             [
                 'feedbacktext' => 'privacy:metadata:local_datacurso_ratings_feedback:feedbacktext',
                 'type'         => 'privacy:metadata:local_datacurso_ratings_feedback:type',
+                'tenant_id'    => 'privacy:metadata:local_datacurso_ratings_feedback:tenant_id',
                 'timecreated'  => 'privacy:metadata:local_datacurso_ratings_feedback:timecreated',
                 'timemodified' => 'privacy:metadata:local_datacurso_ratings_feedback:timemodified',
             ],

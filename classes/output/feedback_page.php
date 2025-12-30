@@ -42,16 +42,17 @@ class feedback_page implements renderable, templatable {
     /**
      * Constructor.
      *
+     * @param int $tenantid Tenant ID.
      * @param string $type Type of feedback to display.
      */
-    public function __construct(string $type) {
+    public function __construct(string $type, int $tenantid) {
         global $DB;
         $this->type = $type;
 
         // Fetch feedback items from the database.
         $this->items = $DB->get_records(
             'local_datacurso_ratings_feedback',
-            ['type' => $this->type],
+            ['type' => $this->type, 'tenant_id' => $tenantid],
             'id DESC'
         );
     }

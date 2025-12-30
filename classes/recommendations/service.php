@@ -35,7 +35,9 @@ class service {
      * @return array The list of recommended courses.
      */
     public static function get_recommendations_for_user(int $userid, int $limit = 5): array {
-        global $DB;
+        global $DB, $USER;
+
+        $tenantid = \tool_tenant\tenancy::get_tenant_id($userid);
 
         // Step 1: User preferences by category.
         $sqlusercats = "
@@ -44,9 +46,11 @@ class service {
                    SUM(CASE WHEN r.rating = 0 THEN 1 ELSE 0 END) AS dislikes
               FROM {local_datacurso_ratings} r
              WHERE r.userid = :userid
+               AND r.tenant_id = :tenantid
           GROUP BY r.categoryid
         ";
-        $catprefs = $DB->get_records_sql($sqlusercats, ['userid' => $userid]);
+
+        $catprefs = $DB->get_records_sql($sqlusercats, ['userid' => $userid, 'tenantid' => $tenantid]);
 
         $categorypref = [];
         foreach ($catprefs as $c) {
@@ -57,12 +61,15 @@ class service {
         }
 
         // Step 2: Global rating ratio.
+
         $global = $DB->get_record_sql("
             SELECT
                 SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) AS likes,
                 SUM(CASE WHEN rating = 0 THEN 1 ELSE 0 END) AS dislikes
             FROM {local_datacurso_ratings}
-        ");
+            WHERE tenant_id = :tenantid
+        ", ['tenantid' => $tenantid]);
+
         $globallikes = (int)($global->likes ?? 0);
         $globaldislikes = (int)($global->dislikes ?? 0);
         $globalratio = ($globallikes + $globaldislikes) > 0

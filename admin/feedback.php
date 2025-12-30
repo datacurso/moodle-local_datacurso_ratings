@@ -50,14 +50,19 @@ $tabs[] = new tabobject(
 echo $OUTPUT->header();
 echo $OUTPUT->tabtree($tabs, $tab);
 
+global $USER;
+
+// Tenant resolution.
+$tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+
 switch ($tab) {
     case 'responselike':
-        $renderable = new \local_datacurso_ratings\output\feedback_page('like');
+        $renderable = new \local_datacurso_ratings\output\feedback_page('like', $tenantid);
         echo $OUTPUT->render($renderable);
         break;
 
     case 'responsedislike':
-        $renderable = new \local_datacurso_ratings\output\feedback_page('dislike');
+        $renderable = new \local_datacurso_ratings\output\feedback_page('dislike', $tenantid);
         echo $OUTPUT->render($renderable);
         break;
 }
