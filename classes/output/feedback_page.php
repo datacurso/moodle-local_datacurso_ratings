@@ -42,8 +42,8 @@ class feedback_page implements renderable, templatable {
     /**
      * Constructor.
      *
-     * @param int $tenantid Tenant ID.
      * @param string $type Type of feedback to display.
+     * @param int $tenantid Tenant ID for multi-tenancy support.
      */
     public function __construct(string $type, int $tenantid) {
         global $DB;
@@ -60,7 +60,7 @@ class feedback_page implements renderable, templatable {
     /**
      * Export data for mustache template.
      *
-     * @param renderer_base $output The renderer.
+     * @param renderer_base $output The renderer instance used for generating output
      * @return array Data to render template.
      */
     public function export_for_template(renderer_base $output) {
