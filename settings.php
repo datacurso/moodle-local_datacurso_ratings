@@ -54,5 +54,4 @@ if ($hassiteconfig) {
         new moodle_url('/local/datacurso_ratings/admin/setting_tenant.php'),
         'moodle/site:config'
     ));
-
 }

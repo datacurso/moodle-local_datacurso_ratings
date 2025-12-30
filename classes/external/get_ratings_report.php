@@ -90,7 +90,7 @@ class get_ratings_report extends external_api {
         $params = [
             'tenantid' => $tenantid,
         ];
-        
+
         $records = $DB->get_records_sql($sql, $params);
         $result = [];
 
