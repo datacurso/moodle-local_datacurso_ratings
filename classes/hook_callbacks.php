@@ -112,8 +112,8 @@ class hook_callbacks {
             return;
         }
 
-        $feedbackpagelike = new \local_datacurso_ratings\output\feedback_page('like');
-        $feedbackpagedislike = new \local_datacurso_ratings\output\feedback_page('dislike');
+        $feedbackpagelike = new \local_datacurso_ratings\output\feedback_page('like', $tenantid);
+        $feedbackpagedislike = new \local_datacurso_ratings\output\feedback_page('dislike', $tenantid);
 
         $feedbackdatalike = $feedbackpagelike->export_for_template($OUTPUT);
         $feedbackdatadislike = $feedbackpagedislike->export_for_template($OUTPUT);
