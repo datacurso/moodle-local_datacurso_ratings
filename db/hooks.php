@@ -29,4 +29,16 @@ $callbacks = [
         'hook' => \core\hook\output\before_footer_html_generation::class,
         'callback' => [\local_datacurso_ratings\hook_callbacks::class, 'before_footer_html_generation'],
     ],
+    [
+        'hook' => \core_course\hook\after_form_definition::class,
+        'callback' => \local_datacurso_ratings\hook\course_form_hook::class . '::after_form_definition',
+    ],
+    [
+        'hook' => \core_course\hook\after_form_definition_after_data::class,
+        'callback' => \local_datacurso_ratings\hook\course_form_hook::class . '::after_form_definition_after_data',
+    ],
+    [
+        'hook' => \core_course\hook\after_form_submission::class,
+        'callback' => \local_datacurso_ratings\hook\course_form_hook::class . '::after_form_submission',
+    ],
 ];
