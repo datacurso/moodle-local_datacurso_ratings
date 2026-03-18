@@ -92,7 +92,7 @@ class course_form_hook {
         }
 
         $data = $hook->get_data();
-        
+
         $courseid = isset($data->id) ? $data->id : ($COURSE->id ?? 0);
 
         if (!$courseid || !isset($data->local_datacurso_ratings_enabled)) {
