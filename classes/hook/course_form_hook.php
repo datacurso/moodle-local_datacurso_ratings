@@ -36,7 +36,6 @@ require_once(__DIR__ . '/../../courselib.php');
  * Hook callback to add elements to the course edit form.
  */
 class course_form_hook {
-
     /**
      * Add elements to the course edit form.
      *
@@ -57,9 +56,17 @@ class course_form_hook {
         $enabled = local_datacurso_ratings_get_course_enabled($COURSE->id);
         $defaultvalue = ($enabled === null) ? 1 : ($enabled ? 1 : 0);
 
-        $mform->addElement('selectyesno', 'local_datacurso_ratings_enabled', get_string('enableforcourse', 'local_datacurso_ratings'));
+        $mform->addElement(
+            'selectyesno',
+            'local_datacurso_ratings_enabled',
+            get_string('enableforcourse', 'local_datacurso_ratings')
+        );
         $mform->setDefault('local_datacurso_ratings_enabled', $defaultvalue);
-        $mform->addHelpButton('local_datacurso_ratings_enabled', 'enableforcourse', 'local_datacurso_ratings');
+        $mform->addHelpButton(
+            'local_datacurso_ratings_enabled',
+            'enableforcourse',
+            'local_datacurso_ratings'
+        );
     }
 
     /**
@@ -87,7 +94,7 @@ class course_form_hook {
         $data = $hook->get_data();
         
         $courseid = isset($data->id) ? $data->id : ($COURSE->id ?? 0);
-        
+
         if (!$courseid || !isset($data->local_datacurso_ratings_enabled)) {
             return;
         }
