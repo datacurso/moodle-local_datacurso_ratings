@@ -22,12 +22,16 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+defined('MOODLE_INTERNAL') || die();
+
+require_once(__DIR__ . '/courselib.php');
+
 /**
  * Extiende la lista de informes del curso.
  *
  * @param navigation_node $navigation The navigation node.
  * @param stdClass $course The course object.
- * @param context_course $context The course context.
+ * @param context $context The course context.
  */
 function local_datacurso_ratings_extend_navigation_course($navigation, $course, $context) {
     // Teachers and managers can see the report.
@@ -35,7 +39,7 @@ function local_datacurso_ratings_extend_navigation_course($navigation, $course, 
         // Search especific the nodo of "Reports".
         $reportsnode = $navigation->get('coursereports');
         if ($reportsnode) {
-            $url = new moodle_url(
+            $url = new \moodle_url(
                 '/local/datacurso_ratings/admin/report_ratings_course.php',
                 ['id' => $course->id]
             );
