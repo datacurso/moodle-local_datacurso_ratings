@@ -18,6 +18,10 @@ namespace local_datacurso_ratings;
 
 use core\hook\output\before_footer_html_generation;
 
+defined('MOODLE_INTERNAL') || die();
+
+require_once(__DIR__ . '/../courselib.php');
+
 /**
  * Hook callbacks for local_datacurso_ratings.
  *
@@ -62,6 +66,11 @@ class hook_callbacks {
         );
 
         if ($enabled !== 1) {
+            return;
+        }
+
+        // Check if plugin is enabled for this specific course.
+        if (!local_datacurso_ratings_is_enabled_for_course($cm->course)) {
             return;
         }
 
