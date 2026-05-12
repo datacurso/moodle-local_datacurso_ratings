@@ -16,8 +16,6 @@
 
 namespace local_datacurso_ratings\external;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Tests for the get_activity_comments external function.
  *
@@ -25,9 +23,9 @@ defined('MOODLE_INTERNAL') || die();
  * @copyright  2025 Industria Elearning <info@industriaelearning.com>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  * @covers     \local_datacurso_ratings\external\get_activity_comments
+ * @runTestsInSeparateProcesses
  */
-class get_activity_comments_test extends \advanced_testcase {
-
+final class get_activity_comments_test extends \advanced_testcase {
     /**
      * Test that the date/timestamp returned for a comment reflects the last
      * modification time (timemodified), NOT the creation time (timecreated).
