@@ -95,8 +95,8 @@ class get_activity_comments extends external_api {
             'local_datacurso_ratings',
             $wherestring,
             $sqlparams,
-            'timecreated DESC',
-            'id, feedback, rating, timecreated',
+            'timemodified DESC',
+            'id, feedback, rating, timecreated, timemodified',
             $offset,
             $params['perpage']
         );
@@ -109,8 +109,8 @@ class get_activity_comments extends external_api {
                 'feedback' => $comment->feedback,
                 'rating' => (int)$comment->rating,
                 'rating_type' => $comment->rating == 1 ? 'like' : 'dislike',
-                'date' => userdate($comment->timecreated, get_string('strftimedatetimeshort')),
-                'timestamp' => $comment->timecreated,
+                'date' => userdate($comment->timemodified, get_string('strftimedatetimeshort')),
+                'timestamp' => $comment->timemodified,
             ];
         }
 
