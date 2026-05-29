@@ -55,6 +55,13 @@ class get_ratings_report extends external_api {
     /**
      * Main logic: queries and returns the information.
      *
+     * @param int $page Zero-based page number.
+     * @param int $perpage Courses per page.
+     * @param string $searchactivity Activity search text.
+     * @param string $searchcourse Course search text.
+     * @param int $categoryid Category ID filter.
+     * @param string $datefrom Start date filter (YYYY-MM-DD).
+     * @param string $dateto End date filter (YYYY-MM-DD).
      * @return array
      */
     public static function execute(
