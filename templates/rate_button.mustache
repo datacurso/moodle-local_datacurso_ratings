@@ -27,7 +27,7 @@
 <div class="local-dcr-rate" data-cmid="{{cmid}}">
     <div class="local-dcr-options" style="display:flex; gap:0.5rem; align-items:center;">
         <button type="button" class="btn btn-outline-primary" data-action="rate" data-rating="1" aria-label="{{#str}} like, local_datacurso_ratings {{/str}}" title="👍 {{#str}} likeactivitie, local_datacurso_ratings {{/str}}">👍</button>
-        <button type="button" class="btn btn-outline-primary" data-action="rate" data-rating="0" aria-label="{{#str}} dislike, local_datacurso_ratings {{/str}}" title="👎{{#str}} likeactivitie, local_datacurso_ratings {{/str}}">👎</button>
+        <button type="button" class="btn btn-outline-primary" data-action="rate" data-rating="0" aria-label="{{#str}} dislike, local_datacurso_ratings {{/str}}" title="👎{{#str}} dislikeactivitie, local_datacurso_ratings {{/str}}">👎</button>
     </div>
     
     <div class="local-dcr-feedback" style="display:none; margin-top:0.5rem;">
@@ -63,7 +63,7 @@
 
         <!-- Textarea hide default for "Others" -->
         <div id="local-dcr-feedback-textarea" style="display:none; margin-top:0.5rem;">
-            <textarea id="local-dcr-feedback-input" class="form-control" rows="3" placeholder="{{#str}} feedbackplaceholder, local_datacurso_ratings {{/str}}"></textarea>
+            <textarea id="local-dcr-feedback-input" class="form-control" rows="3" maxlength="200" placeholder="{{#str}} feedbackplaceholder, local_datacurso_ratings {{/str}} (200 max.)"></textarea>
         </div>
 
         <div class="local-dcr-actions" style="margin-top:0.5rem; display:flex; gap:0.5rem;">

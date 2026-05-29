@@ -80,34 +80,88 @@
 </div>
 
 <!-- Filters -->
-<div class="row mb-3">
-    <div class="col-md-6">
+<div class="row mb-3 g-0 align-items-end">
+    <div class="col-lg-2 col-md-6 pe-lg-1 pe-md-1 mb-1">
         <div class="input-group">
             <span class="input-group-text"><i class="fa fa-search"></i></span>
-            <input type="text" class="form-control" id="activity-search"
+            <input type="text" class="form-control" data-action="global-report-activity-search"
                 placeholder="{{#str}} searchactivities, local_datacurso_ratings {{/str}}">
         </div>
     </div>
 
     <!-- Category filter with datalist -->
-    <div class="col-md-3">
-        <input list="categories" class="form-control" id="category-filter" 
-               placeholder="{{#str}} searchcategories, local_datacurso_ratings {{/str}}" data-category-id="">
-        <datalist id="categories">
-            <option value="{{#str}} allcategories, local_datacurso_ratings {{/str}}" data-id="">{{#str}} allcategories, local_datacurso_ratings {{/str}}</option>
+    <div class="col-lg-2 col-md-6 pe-lg-1 pe-md-1 mb-1">
+        <input list="categories" class="form-control" data-action="global-report-category-filter"
+               placeholder="{{#str}} searchcategories, local_datacurso_ratings {{/str}}">
+        <datalist id="categories" data-region="global-report-categories">
+            <option value="{{#str}} allcategories, local_datacurso_ratings {{/str}}" data-id=""></option>
             {{#categories}}
-            <option value="{{name}}" data-id="{{id}}">{{name}}</option>
+            <option value="{{name}}" data-id="{{id}}"></option>
             {{/categories}}
         </datalist>
     </div>
     
     <!-- Course filter with datalist -->
-    <div class="col-md-3">
-        <input list="courses" class="form-control" id="course-filter" 
+    <div class="col-lg-2 col-md-6 pe-lg-1 pe-md-1 mb-1">
+        <input list="courses" class="form-control" data-action="global-report-course-filter"
+               data-allcourses-label="{{#str}} allcourses, local_datacurso_ratings {{/str}}"
                placeholder="{{#str}} searchcourses, local_datacurso_ratings {{/str}}">
-        <datalist id="courses">
-            <option value="{{#str}} allcourses, local_datacurso_ratings {{/str}}">{{#str}} allcourses, local_datacurso_ratings {{/str}}</option>
+        <datalist id="courses" data-region="global-report-courses">
+            <option value="{{#str}} allcourses, local_datacurso_ratings {{/str}}"></option>
         </datalist>
+    </div>
+
+    <!-- Date from (visual only) -->
+    <div class="col-lg-2 col-md-6 pe-lg-1 pe-md-1 mb-1">
+        <input type="date" class="form-control" data-action="global-report-date-from">
+    </div>
+
+    <!-- Date to (visual only) -->
+    <div class="col-lg-2 col-md-6 pe-lg-1 pe-md-1 mb-1">
+        <input type="date" class="form-control" data-action="global-report-date-to">
+    </div>
+
+    <!-- Export CSV (visual only) -->
+    <div class="col-lg-2 col-md-6 mb-1">
+        <button type="button" class="btn btn-success w-100" data-action="global-report-export-csv">
+            <i class="fa fa-download me-1"></i>{{#str}} exportcsv, local_datacurso_ratings {{/str}}
+        </button>
+    </div>
+</div>
+
+<!-- Pagination Controls -->
+<div class="card mb-3">
+    <div class="card-body py-3">
+        <div class="d-flex flex-wrap justify-content-end align-items-center gap-2">
+            <div class="d-flex flex-wrap align-items-center gap-2 justify-content-end">
+                <div class="d-flex align-items-center local-dcr-perpage-group">
+                    <label class="mb-0 fw-bold text-nowrap local-dcr-perpage-label">{{#str}} showcourses, local_datacurso_ratings {{/str}}</label>
+                    <select class="form-select local-dcr-perpage-select" data-action="global-report-perpage">
+                        {{#pagination.perpage_options}}
+                        <option value="{{value}}" {{#selected}}selected{{/selected}}>{{value}}</option>
+                        {{/pagination.perpage_options}}
+                    </select>
+                </div>
+
+                <div class="btn-group ms-2 local-dcr-pagination" role="group" aria-label="Pagination">
+                    <button type="button"
+                            class="btn btn-outline-primary"
+                            data-action="global-report-prev"
+                            data-page="{{pagination.prevpage}}"
+                            {{^pagination.hasprev}}disabled{{/pagination.hasprev}}>
+                        <i class="fa fa-angle-left"></i>
+                    </button>
+                    <span class="btn btn-light disabled local-dcr-page-indicator">{{pagination.displaypage}} / {{pagination.totalpages}}</span>
+                    <button type="button"
+                            class="btn btn-outline-primary"
+                            data-action="global-report-next"
+                            data-page="{{pagination.nextpage}}"
+                            {{^pagination.hasnext}}disabled{{/pagination.hasnext}}>
+                        <i class="fa fa-angle-right"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 

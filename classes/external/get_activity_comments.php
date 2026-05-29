@@ -132,6 +132,7 @@ class get_activity_comments extends external_api {
                 'name' => $cm->name,
                 'modname' => $cm->modname,
             ],
+            'can_generate_activity_ai' => has_capability('local/datacurso_ratings:generateanalysisactivity', $context),
         ];
     }
 
@@ -282,6 +283,7 @@ class get_activity_comments extends external_api {
                 'name' => new external_value(PARAM_TEXT, 'Activity name'),
                 'modname' => new external_value(PARAM_TEXT, 'Module name'),
             ]),
+            'can_generate_activity_ai' => new external_value(PARAM_BOOL, 'Can generate AI analysis for activity comments'),
         ]);
     }
 }
