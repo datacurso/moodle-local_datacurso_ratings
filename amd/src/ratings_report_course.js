@@ -62,6 +62,7 @@ export const init = (courseid) => {
  * @returns {Object}
  */
 function processReportData(data, courseid) {
+    const canGenerateCourseAi = data.length > 0 && !!data[0].can_generate_course_ai;
     let totalLikes = 0;
     let totalDislikes = 0;
     let activitiesWithRatings = 0;
@@ -106,6 +107,7 @@ function processReportData(data, courseid) {
     return {
         courseid,
         activities: processedActivities,
+        can_generate_course_ai: canGenerateCourseAi,
         has_data: processedActivities.length > 0,
         summary: {
             total_activities: processedActivities.length,

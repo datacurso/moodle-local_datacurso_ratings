@@ -107,6 +107,7 @@ class hook_callbacks {
             'workshop',
             'lti',
             'h5pactivity',
+            'hvp',
         ];
 
         if (!in_array($cm->modname, $coremodules)) {

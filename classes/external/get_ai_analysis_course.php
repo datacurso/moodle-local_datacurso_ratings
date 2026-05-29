@@ -64,6 +64,7 @@ class get_ai_analysis_course extends external_api {
         $context = context_course::instance($course->id);
         self::validate_context($context);
         require_capability('local/datacurso_ratings:viewcoursereport', $context);
+        require_capability('local/datacurso_ratings:generateanalysiscourse', $context);
 
         // Gather ratings data for the course.
         $sql = "SELECT cm.id, cm.instance, cm.module, m.name AS modname, cm.idnumber, cm.section

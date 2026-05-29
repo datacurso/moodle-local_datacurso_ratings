@@ -64,6 +64,7 @@ class get_ai_analysis_comments extends external_api {
         $context = context_module::instance($cm->id);
         self::validate_context($context);
         require_capability('local/datacurso_ratings:viewcoursereport', $context);
+        require_capability('local/datacurso_ratings:generateanalysisactivity', $context);
 
         // Get course.
         $course = $DB->get_record('course', ['id' => $cm->course], '*', MUST_EXIST);
