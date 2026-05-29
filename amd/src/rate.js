@@ -26,6 +26,8 @@ import { get_string as getString } from 'core/str';
 import Notification from 'core/notification';
 import Templates from 'core/templates';
 
+const MAX_FEEDBACK_LENGTH = 200;
+
 /**
  * Initialise rating widget for the given cmid.
  *
@@ -145,6 +147,8 @@ export const init = (cmid) => {
         if (selected) {
             feedback = selected.value === 'other' ? (fbInput?.value || '').trim() : selected.value;
         }
+
+        feedback = feedback.slice(0, MAX_FEEDBACK_LENGTH);
 
         sendRating(cmid, rating, feedback);
     });

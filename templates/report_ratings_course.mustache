@@ -84,16 +84,22 @@
     </div>
 </div>
 
-<!-- AI analysis of comments -->
-{{#can_generate_course_ai}}
-<div class="mb-3 mt-3">
-    <button  
-        class="btn btn-outline-secondary btn-generate-ai-course" >
-        {{#str}} generatecommentaicourse, local_datacurso_ratings {{/str}} ✨
+<!-- Report actions -->
+<div class="mb-3 mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        {{#can_generate_course_ai}}
+        <button
+            class="btn btn-outline-secondary btn-generate-ai-course">
+            {{#str}} generatecommentaicourse, local_datacurso_ratings {{/str}} ✨
+        </button>
+        {{/can_generate_course_ai}}
+        <div class="ai-analysis-result-course mt-2"></div>
+    </div>
+
+    <button type="button" class="btn btn-success" data-action="course-report-export-csv">
+        <i class="fa fa-download me-1"></i>{{#str}} exportcsv, local_datacurso_ratings {{/str}}
     </button>
-    <div class="ai-analysis-result-course mt-2"></div>
 </div>
-{{/can_generate_course_ai}}
 
 <!-- Ratings Table -->
 <div class="table-responsive">

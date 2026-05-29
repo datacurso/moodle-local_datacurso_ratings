@@ -25,6 +25,9 @@ import Ajax from 'core/ajax';
 import Templates from 'core/templates';
 import Notification from 'core/notification';
 
+/** @type {Array} */
+let cachedActivities = [];
+
 /**
  * Initialize the ratings report for a specific course.
  *
@@ -43,6 +46,10 @@ export const init = (courseid) => {
         args: {courseid}
     }])[0]
         .then((data) => processReportData(data, courseid))
+        .then((templateData) => {
+            cachedActivities = Array.isArray(templateData.activities) ? templateData.activities : [];
+            return templateData;
+        })
         .then((templateData) => Templates.render('local_datacurso_ratings/report_ratings_course', templateData))
         .then((html, js) => {
             container.innerHTML = html;
@@ -152,6 +159,11 @@ export async function showLoading(container) {
  * Initialize interactive features in the rendered table.
  */
 function initTableFeatures() {
+    const exportCsvButton = document.querySelector('[data-action="course-report-export-csv"]');
+    if (exportCsvButton) {
+        exportCsvButton.addEventListener('click', exportToCSV);
+    }
+
     document.querySelectorAll('.expand-comments').forEach((button) => {
         button.addEventListener('click', (e) => {
             const targetSelector = e.currentTarget.getAttribute('data-target');
@@ -167,6 +179,54 @@ function initTableFeatures() {
     });
 
     initTableSorting();
+}
+
+/**
+ * Export current course report activities to CSV.
+ */
+function exportToCSV() {
+    if (!Array.isArray(cachedActivities) || cachedActivities.length === 0) {
+        return;
+    }
+
+    const headers = [
+        'Curso',
+        'Actividad',
+        'Total valoraciones',
+        'Me gusta',
+        'No me gusta',
+        'Indice de satisfaccion',
+        'Comentarios',
+    ];
+
+    const rows = cachedActivities.map((activity) => [
+        activity.curso || '',
+        activity.actividad || '',
+        activity.total_ratings || 0,
+        activity.likes || 0,
+        activity.dislikes || 0,
+        activity.formatted_percentage || '',
+        activity.comentarios || '',
+    ]);
+
+    const csvcontent = [
+        headers.join(','),
+        ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvcontent], {type: 'text/csv;charset=utf-8;'});
+    const link = document.createElement('a');
+    const courseName = cachedActivities[0]?.curso || 'curso';
+    const normalizedCourseName = courseName
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .toLowerCase() || 'curso';
+    link.href = URL.createObjectURL(blob);
+    link.download = `reporte_curso_${normalizedCourseName}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
 }
 
 /**

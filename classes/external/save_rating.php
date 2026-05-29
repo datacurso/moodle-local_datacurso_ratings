@@ -95,7 +95,7 @@ class save_rating extends external_api {
             'courseid' => $courseid,
             'categoryid' => $categoryid,
             'rating' => $r,
-            'feedback' => (string)$params['feedback'],
+            'feedback' => \core_text::substr(trim((string)$params['feedback']), 0, 200),
             'timemodified' => $now,
         ];
 
