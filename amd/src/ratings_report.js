@@ -24,6 +24,7 @@
 import Ajax from 'core/ajax';
 import Templates from 'core/templates';
 import Notification from 'core/notification';
+import {getStrings} from 'core/str';
 
 const ALLOWED_PER_PAGE = [5, 10, 25, 50, 100];
 
@@ -263,20 +264,29 @@ const updateCoursesByCategory = async(categoryid) => {
 /**
  * Export currently loaded page rows to CSV.
  */
-const exportToCSV = () => {
+const exportToCSV = async() => {
     if (!Array.isArray(cachedCourses) || cachedCourses.length === 0) {
         return;
     }
 
-    const headers = [
-        'Curso',
-        'Actividad',
-        'Total valoraciones',
-        'Me gusta',
-        'No me gusta',
-        'Indice de satisfaccion',
-        'Comentarios',
-    ];
+    let strings;
+    try {
+        strings = await getStrings([
+            'csvfilename',
+            'course',
+            'activity',
+            'totalratings',
+            'likes',
+            'dislikes',
+            'satisfaction',
+            'comments',
+        ].map((key) => ({key, component: 'local_datacurso_ratings'})));
+    } catch (error) {
+        Notification.exception(error);
+        return;
+    }
+
+    const [csvfilename, ...headers] = strings;
 
     const rows = [];
 
@@ -306,7 +316,7 @@ const exportToCSV = () => {
     const blob = new Blob(['\ufeff' + csvcontent], {type: 'text/csv;charset=utf-8;'});
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `reporte_valoraciones_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `${csvfilename}_${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
 };
