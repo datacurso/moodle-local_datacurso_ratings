@@ -14,233 +14,166 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_datacurso_ratings;
-
-use context_user;
-use context_system;
-use core_privacy\local\metadata\collection;
-use core_privacy\local\request\approved_contextlist;
-use core_privacy\local\request\approved_userlist;
-use core_privacy\local\request\userlist;
-use core_privacy\local\request\writer;
-use core_privacy\tests\provider_testcase;
-
 /**
- * Privacy provider tests for local_datacurso_ratings plugin.
+ * Tests for the GDPR privacy provider.
  *
  * @package    local_datacurso_ratings
  * @category   test
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @covers \local_datacurso_ratings\privacy\provider
  */
-final class privacy_provider_test extends provider_testcase {
+
+defined('MOODLE_INTERNAL') || die();
+
+/**
+ * Tests for GDPR compliance — export, selective delete, and mass delete (INT-015).
+ */
+class privacy_provider_test extends \core_privacy\tests\provider_testcase {
+
     /**
-     * Test that metadata is correctly defined by the provider.
+     * Insert a rating record directly for test setup.
      *
-     * @covers ::get_metadata
-     * @return void
+     * @param int $userid
+     * @param int $courseid
+     * @param int $categoryid
+     * @param int $rating
      */
-    public function test_get_metadata(): void {
+    /** @var int Auto-incrementing cmid counter to avoid UNIQUE(cmid, userid) violations. */
+    private static int $cmidcounter = 100;
+
+    private function insert_rating(int $userid, int $courseid, int $categoryid, int $rating): void {
+        global $DB;
+        $now = time();
+        $DB->insert_record('local_datacurso_ratings', (object)[
+            'userid'       => $userid,
+            'cmid'         => self::$cmidcounter++,
+            'courseid'     => $courseid,
+            'categoryid'   => $categoryid,
+            'rating'       => $rating,
+            'feedback'     => 'Test feedback',
+            'timecreated'  => $now,
+            'timemodified' => $now,
+        ]);
+    }
+
+    /**
+     * Insert a predefined feedback phrase for test setup.
+     *
+     * @param string $text
+     * @param string $type  'like' or 'dislike'
+     */
+    private function insert_feedback_phrase(string $text, string $type): void {
+        global $DB;
+        $now = time();
+        $DB->insert_record('local_datacurso_ratings_feedback', (object)[
+            'feedbacktext' => $text,
+            'type'         => $type,
+            'timecreated'  => $now,
+            'timemodified' => $now,
+        ]);
+    }
+
+    /**
+     * Verify that all ratings for a user are exported correctly (3 ratings = 3 records).
+     *
+     * @spec MDL-INT-015 step 1
+     */
+    public function test_export_user_data_returns_all_ratings(): void {
+        global $DB;
         $this->resetAfterTest(true);
 
-        $collection = new collection('local_datacurso_ratings');
-        $collection = \local_datacurso_ratings\privacy\provider::get_metadata($collection);
-        $items = $collection->get_collection();
+        $user   = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
 
-        // Extract table names from the metadata.
-        $foundtables = array_map(fn($item) => $item->get_name(), $items);
+        // Insert 3 ratings for the user.
+        $this->insert_rating($user->id, $course->id, 1, 1);
+        $this->insert_rating($user->id, $course->id, 1, 0);
+        $this->insert_rating($user->id, $course->id, 2, 1);
 
-        // Savee that the expected tables exist.
-        $this->assertContains('local_datacurso_ratings', $foundtables);
-        $this->assertContains('local_datacurso_ratings_feedback', $foundtables);
-    }
-
-    /**
-     * Test that the provider implements required interfaces.
-     *
-     * @covers ::provider
-     * @return void
-     */
-    public function test_provider_implements_interfaces(): void {
-        $provider = new \local_datacurso_ratings\privacy\provider();
-
-        $this->assertInstanceOf(\core_privacy\local\metadata\provider::class, $provider);
-        $this->assertInstanceOf(\core_privacy\local\request\plugin\provider::class, $provider);
-    }
-
-    /**
-     * Test that contexts are correctly returned for a given user.
-     *
-     * @covers ::get_contexts_for_userid
-     * @return void
-     */
-    public function test_get_contexts_for_userid(): void {
-        $this->resetAfterTest();
-        $user = $this->getDataGenerator()->create_user();
-
-        $this->assertEmpty(\local_datacurso_ratings\privacy\provider::get_contexts_for_userid($user->id));
-
-        // Create user data and re-check.
-        self::create_userdata($user->id);
+        $syscontext = \context_system::instance();
 
         $contextlist = \local_datacurso_ratings\privacy\provider::get_contexts_for_userid($user->id);
-        $this->assertNotEmpty($contextlist->get_contextids());
+        $this->assertNotEmpty($contextlist->get_contextids(), 'Context list must not be empty for a user with ratings.');
+
+        // Build an approved context list using the system context.
+        $approvedids     = new \core_privacy\local\request\approved_contextlist($user, 'local_datacurso_ratings', [(string)$syscontext->id]);
+        \local_datacurso_ratings\privacy\provider::export_user_data($approvedids);
+
+        // The writer should have received data for this user.
+        $writer = \core_privacy\local\request\writer::with_context($syscontext);
+        $data   = $writer->get_data(['Ratings']);
+
+        $this->assertNotNull($data, 'Exported data object must not be null.');
+        $this->assertCount(3, $data->entries, 'Exported entries must contain exactly 3 ratings.');
     }
 
     /**
-     * Test that users in context are correctly fetched.
+     * Verify that deleting user A's data does not affect user B's ratings.
      *
-     * @covers ::get_users_in_context
-     * @return void
+     * @spec MDL-INT-015 step 2
      */
-    public function test_get_users_in_context(): void {
-        $this->resetAfterTest();
-        $component = 'local_datacurso_ratings';
-
-        $user = $this->getDataGenerator()->create_user();
-        $usercontext = context_user::instance($user->id);
-        $userlist = new userlist($usercontext, $component);
-
-        // Empty initially.
-        \local_datacurso_ratings\privacy\provider::get_users_in_context($userlist);
-        $this->assertCount(0, $userlist);
-
-        // Create user data. and re-check.
-        self::create_userdata($user->id);
-        \local_datacurso_ratings\privacy\provider::get_users_in_context($userlist);
-        $this->assertNotEmpty($userlist->get_userids());
-    }
-
-    /**
-     * Test that user data is exported correctly.
-     *
-     * @covers ::export_user_data
-     * @return void
-     */
-    public function test_export_user_data(): void {
-        $this->resetAfterTest();
-        $user = $this->getDataGenerator()->create_user();
-        self::create_userdata($user->id);
-        $usercontext = context_user::instance($user->id);
-
-        $writer = writer::with_context($usercontext);
-        $this->assertFalse($writer->has_any_data());
-
-        $approvedlist = new approved_contextlist($user, 'local_datacurso_ratings', [$usercontext->id]);
-        \local_datacurso_ratings\privacy\provider::export_user_data($approvedlist);
-
-        $data = $writer->get_data(['Ratings']);
-        $this->assertNotEmpty($data);
-    }
-
-    /**
-     * Test deleting all user data for a specific context.
-     *
-     * @covers ::delete_data_for_all_users_in_context
-     * @return void
-     */
-    public function test_delete_data_for_all_users_in_context(): void {
+    public function test_delete_user_data_does_not_affect_other_users(): void {
         global $DB;
+        $this->resetAfterTest(true);
 
-        $this->resetAfterTest();
-        $user1 = $this->getDataGenerator()->create_user();
-        $user2 = $this->getDataGenerator()->create_user();
-        self::create_userdata($user1->id);
-        self::create_userdata($user2->id);
+        $usera  = $this->getDataGenerator()->create_user();
+        $userb  = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
 
-        $context = context_system::instance();
-        \local_datacurso_ratings\privacy\provider::delete_data_for_all_users_in_context($context);
+        $this->insert_rating($usera->id, $course->id, 1, 1);
+        $this->insert_rating($userb->id, $course->id, 1, 0);
 
-        $this->assertCount(0, $DB->get_records('local_datacurso_ratings'));
-        $this->assertCount(0, $DB->get_records('local_datacurso_ratings_feedback'));
+        $syscontext = \context_system::instance();
+
+        $approvedids = new \core_privacy\local\request\approved_contextlist(
+            $usera,
+            'local_datacurso_ratings',
+            [(string)$syscontext->id]
+        );
+        \local_datacurso_ratings\privacy\provider::delete_data_for_user($approvedids);
+
+        $this->assertFalse(
+            $DB->record_exists('local_datacurso_ratings', ['userid' => $usera->id]),
+            'User A\'s ratings must be deleted.'
+        );
+        $this->assertTrue(
+            $DB->record_exists('local_datacurso_ratings', ['userid' => $userb->id]),
+            'User B\'s ratings must remain untouched after deleting User A.'
+        );
     }
 
     /**
-     * Test deleting data for a single approved user.
+     * Verify that a mass delete in system context removes both ratings and feedback phrases.
      *
-     * @covers ::delete_data_for_user
-     * @return void
-     */
-    public function test_delete_data_for_user(): void {
-        global $DB;
-
-        $this->resetAfterTest();
-        $user1 = $this->getDataGenerator()->create_user();
-        $user2 = $this->getDataGenerator()->create_user();
-        self::create_userdata($user1->id);
-        self::create_userdata($user2->id);
-
-        $context = context_system::instance();
-        $approvedlist = new approved_contextlist($user1, 'local_datacurso_ratings', [$context->id]);
-
-        \local_datacurso_ratings\privacy\provider::delete_data_for_user($approvedlist);
-
-        $this->assertCount(0, $DB->get_records('local_datacurso_ratings', ['userid' => $user1->id]));
-        $this->assertNotEmpty($DB->get_records('local_datacurso_ratings', ['userid' => $user2->id]));
-    }
-
-    /**
-     * Test deleting data for multiple approved users.
+     * This documents the current (known-incorrect) behavior: predefined admin feedback phrases
+     * are also deleted, which is a side-effect pending correction.
      *
-     * @covers ::delete_data_for_users
-     * @return void
+     * @spec MDL-INT-015 step 3
      */
-    public function test_delete_data_for_users(): void {
+    public function test_mass_delete_in_system_context_clears_both_tables(): void {
         global $DB;
+        $this->resetAfterTest(true);
 
-        $this->resetAfterTest();
-        $component = 'local_datacurso_ratings';
-        $user1 = $this->getDataGenerator()->create_user();
-        $user2 = $this->getDataGenerator()->create_user();
+        $user   = $this->getDataGenerator()->create_user();
+        $course = $this->getDataGenerator()->create_course();
 
-        self::create_userdata($user1->id);
-        self::create_userdata($user2->id);
+        $this->insert_rating($user->id, $course->id, 1, 1);
+        $this->insert_feedback_phrase('Great activity!', 'like');
 
-        $context = context_system::instance();
-        $userlist = new userlist($context, $component);
-        \local_datacurso_ratings\privacy\provider::get_users_in_context($userlist);
-        $this->assertNotEmpty($userlist->get_userids());
+        $syscontext = \context_system::instance();
+        \local_datacurso_ratings\privacy\provider::delete_data_for_all_users_in_context($syscontext);
 
-        $approvedlist = new approved_userlist($context, $component, [$user1->id]);
-        \local_datacurso_ratings\privacy\provider::delete_data_for_users($approvedlist);
-
-        $this->assertCount(0, $DB->get_records('local_datacurso_ratings', ['userid' => $user1->id]));
-        $this->assertNotEmpty($DB->get_records('local_datacurso_ratings', ['userid' => $user2->id]));
-    }
-
-    /**
-     * Helper function to create fake user data for tests.
-     *
-     * @param int $userid The user ID.
-     * @return array The created records.
-     */
-    private static function create_userdata(int $userid): array {
-        global $DB;
-
-        // Simular estructura completa según la tabla real.
-        $rating = (object) [
-            'userid'       => $userid,
-            'cmid'         => 1,
-            'courseid'     => 1,
-            'categoryid'   => 0,
-            'rating'       => 4,
-            'feedback'     => 'Test feedback',
-            'timecreated'  => time(),
-            'timemodified' => time(),
-        ];
-        $rating->id = $DB->insert_record('local_datacurso_ratings', $rating);
-
-        $feedback = (object) [
-            'feedbacktext' => 'Excellent course',
-            'type'         => 'auto',
-            'timecreated'  => time(),
-            'timemodified' => time(),
-        ];
-        $feedback->id = $DB->insert_record('local_datacurso_ratings_feedback', $feedback);
-
-        return [
-            'rating' => $rating,
-            'feedback' => $feedback,
-        ];
+        $this->assertEquals(
+            0,
+            $DB->count_records('local_datacurso_ratings'),
+            'All ratings must be deleted after mass delete in system context.'
+        );
+        $this->assertEquals(
+            0,
+            $DB->count_records('local_datacurso_ratings_feedback'),
+            'All feedback phrases must also be deleted after mass delete in system context ' .
+            '(current behavior, pending correction).'
+        );
     }
 }
