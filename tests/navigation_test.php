@@ -78,10 +78,10 @@ class navigation_test extends \advanced_testcase {
         local_datacurso_ratings_extend_navigation_course($navigation, $course, $context);
 
         $reportsnode = $navigation->get('coursereports');
-        $this->assertNotNull($reportsnode, 'The coursereports node must exist.');
+        $this->assertNotFalse($reportsnode, 'The coursereports node must exist.');
 
         $reportlink = $reportsnode->get('local_datacurso_ratings_report');
-        $this->assertNotNull(
+        $this->assertNotFalse(
             $reportlink,
             'The report link must be added for a user with the viewcoursereport capability.'
         );
@@ -110,7 +110,7 @@ class navigation_test extends \advanced_testcase {
         local_datacurso_ratings_extend_navigation_course($navigation, $course, $context);
 
         $reportsnode = $navigation->get('coursereports');
-        $this->assertNotNull($reportsnode, 'The coursereports node must exist.');
+        $this->assertNotFalse($reportsnode, 'The coursereports node must exist.');
 
         $reportlink = $reportsnode->get('local_datacurso_ratings_report');
         $this->assertFalse(

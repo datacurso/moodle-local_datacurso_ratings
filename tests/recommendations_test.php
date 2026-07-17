@@ -82,8 +82,9 @@ class recommendations_test extends \externallib_advanced_testcase {
         $this->insert_rating($user->id, $auxpage->cmid, $auxcourse->id, $category->id, 1);
 
         // Add a like to the target course itself so it has satisfaction data.
-        $targetpage = $this->getDataGenerator()->create_module('page', ['course' => $targetcourse->id]);
-        $this->insert_rating($user->id + 9999, $targetpage->cmid, $targetcourse->id, $category->id, 1);
+        $targetpage  = $this->getDataGenerator()->create_module('page', ['course' => $targetcourse->id]);
+        $otherrater  = $this->getDataGenerator()->create_user();
+        $this->insert_rating($otherrater->id, $targetpage->cmid, $targetcourse->id, $category->id, 1);
 
         // Enrol the user in the aux course only (not in target course).
         $this->getDataGenerator()->enrol_user($user->id, $auxcourse->id);
@@ -201,13 +202,13 @@ class recommendations_test extends \externallib_advanced_testcase {
 
         // The user has NO ratings at all — no category preferences.
         // Global ratio will be derived from other users' ratings.
-        $otheruser    = $this->getDataGenerator()->create_user();
-        $course1      = $this->getDataGenerator()->create_course(['category' => $category->id, 'visible' => 1]);
-        $page1        = $this->getDataGenerator()->create_module('page', ['course' => $course1->id]);
+        $course1 = $this->getDataGenerator()->create_course(['category' => $category->id, 'visible' => 1]);
 
-        // Other user adds 5 likes — global ratio = 1.0 (100%), which passes the 80% threshold.
+        // Five distinct raters each like a distinct page — global ratio = 1.0 (100%), passes the 80% threshold.
         for ($i = 0; $i < 5; $i++) {
-            $this->insert_rating($otheruser->id + $i + 1000, $page1->cmid, $course1->id, $category->id, 1);
+            $rater     = $this->getDataGenerator()->create_user();
+            $raterpage = $this->getDataGenerator()->create_module('page', ['course' => $course1->id]);
+            $this->insert_rating($rater->id, $raterpage->cmid, $course1->id, $category->id, 1);
         }
 
         // Target course is in the same category, user is NOT enrolled.
@@ -246,10 +247,11 @@ class recommendations_test extends \externallib_advanced_testcase {
             $courses[] = $this->getDataGenerator()->create_course(['category' => $category->id, 'visible' => 1]);
         }
 
-        // Add likes from other users to build global ratio >= 80%.
-        $page = $this->getDataGenerator()->create_module('page', ['course' => $courses[0]->id]);
+        // Add likes from distinct raters (each with their own page) to build global ratio >= 80%.
         for ($i = 0; $i < 10; $i++) {
-            $this->insert_rating($user->id + 2000 + $i, $page->cmid, $courses[0]->id, $category->id, 1);
+            $rater     = $this->getDataGenerator()->create_user();
+            $raterpage = $this->getDataGenerator()->create_module('page', ['course' => $courses[0]->id]);
+            $this->insert_rating($rater->id, $raterpage->cmid, $courses[0]->id, $category->id, 1);
         }
 
         // User has no personal category preference — global ratio (100%) acts as fallback.

@@ -94,6 +94,16 @@ class testable_get_ai_analysis_global extends \local_datacurso_ratings\external\
  */
 class ai_analysis_test extends \externallib_advanced_testcase {
 
+    /**
+     * Reset all static mock clients after each test to avoid cross-test pollution.
+     */
+    protected function tearDown(): void {
+        testable_get_ai_analysis_comments::$mockclient = null;
+        testable_get_ai_analysis_course::$mockclient = null;
+        testable_get_ai_analysis_global::$mockclient = null;
+        parent::tearDown();
+    }
+
     // -----------------------------------------------------------------------
     // MDL-INT-008 — AI analysis of activity comments
     // -----------------------------------------------------------------------

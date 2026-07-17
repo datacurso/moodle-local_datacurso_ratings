@@ -159,7 +159,7 @@ class get_activity_comments extends external_api {
             $wherestring,
             $sqlparams,
             '',
-            'feedback, rating'
+            'id, feedback, rating'
         );
 
         $totalcomments = count($allcomments);

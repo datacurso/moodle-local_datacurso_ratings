@@ -32,22 +32,23 @@ defined('MOODLE_INTERNAL') || die();
 class privacy_provider_test extends \core_privacy\tests\provider_testcase {
 
     /**
-     * Insert a rating record directly for test setup.
+     * Insert a rating record directly for test setup using a real course module.
+     *
+     * Creates a page module in the given course so that the cmid is a valid
+     * course_modules row, satisfying any FK or UNIQUE(cmid, userid) constraints.
      *
      * @param int $userid
      * @param int $courseid
      * @param int $categoryid
      * @param int $rating
      */
-    /** @var int Auto-incrementing cmid counter to avoid UNIQUE(cmid, userid) violations. */
-    private static int $cmidcounter = 100;
-
     private function insert_rating(int $userid, int $courseid, int $categoryid, int $rating): void {
         global $DB;
-        $now = time();
+        $now  = time();
+        $page = $this->getDataGenerator()->create_module('page', ['course' => $courseid]);
         $DB->insert_record('local_datacurso_ratings', (object)[
             'userid'       => $userid,
-            'cmid'         => self::$cmidcounter++,
+            'cmid'         => $page->cmid,
             'courseid'     => $courseid,
             'categoryid'   => $categoryid,
             'rating'       => $rating,
