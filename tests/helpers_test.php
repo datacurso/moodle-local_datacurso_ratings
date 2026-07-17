@@ -789,7 +789,7 @@ class helpers_test extends \externallib_advanced_testcase {
         $u2 = $this->getDataGenerator()->create_user();
         $u3 = $this->getDataGenerator()->create_user();
 
-        $this->insert_rating($quiz->cmid, $u1->id, 1, 'curso curso contenido bueno');
+        $this->insert_rating($quiz->cmid, $u1->id, 1, 'curso interesante contenido bueno');
         $this->insert_rating($quiz->cmid, $u2->id, 1, 'curso excelente contenido material');
         $this->insert_rating($quiz->cmid, $u3->id, 1, 'curso contenido de el la bueno');
 
@@ -803,8 +803,8 @@ class helpers_test extends \externallib_advanced_testcase {
         $this->assertArrayHasKey('word', $keywords[0]);
         $this->assertArrayHasKey('frequency', $keywords[0]);
 
-        // 'curso' appears once per feedback × 3 feedbacks = 3.
-        // 'contenido' appears once per feedback × 3 feedbacks = 3.
+        // 'curso' appears 1× per feedback × 3 feedbacks = 3.
+        // 'contenido' appears 1× per feedback × 3 feedbacks = 3.
         $this->assertSame('curso', $keywords[0]['word']);
         $this->assertSame(3, $keywords[0]['frequency']);
 
