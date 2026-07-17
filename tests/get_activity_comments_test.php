@@ -84,9 +84,9 @@ class get_activity_comments_test extends externallib_advanced_testcase {
         $u3 = $gen->create_user();
 
         // 2 positive, 1 negative — each with meaningful text.
-        $this->insert_rating($quiz->cmid, $u1->id, 1, 'excelente contenido educativo');
-        $this->insert_rating($quiz->cmid, $u2->id, 1, 'contenido educativo muy bueno');
-        $this->insert_rating($quiz->cmid, $u3->id, 0, 'contenido demasiado extenso');
+        $this->insert_rating($quiz->cmid, $u1->id, 1, 'excellent learning content overall');
+        $this->insert_rating($quiz->cmid, $u2->id, 1, 'learning content really good stuff');
+        $this->insert_rating($quiz->cmid, $u3->id, 0, 'content too long needs improvement');
 
         $result = get_activity_comments::execute($quiz->cmid, 0, 20, '');
         $stats  = $result['statistics'];
@@ -96,9 +96,9 @@ class get_activity_comments_test extends externallib_advanced_testcase {
         $this->assertEquals(1, $stats['dislike_comments']);
         $this->assertGreaterThan(0, $stats['avg_length']);
 
-        // "contenido" appears in all three comments and should surface as a keyword.
+        // "content" appears in all three comments and should surface as a keyword.
         $words = array_column($stats['keywords'], 'word');
-        $this->assertContains('contenido', $words);
+        $this->assertContains('content', $words);
     }
 
     /**
@@ -194,14 +194,14 @@ class get_activity_comments_test extends externallib_advanced_testcase {
         $u1 = $gen->create_user();
         $u2 = $gen->create_user();
 
-        $this->insert_rating($quiz->cmid, $u1->id, 1, 'excelente material didactico');
-        $this->insert_rating($quiz->cmid, $u2->id, 0, 'interfaz confusa y poco clara');
+        $this->insert_rating($quiz->cmid, $u1->id, 1, 'excellent teaching material provided');
+        $this->insert_rating($quiz->cmid, $u2->id, 0, 'confusing interface hard navigation');
 
-        // Search for "excelente" — should return only the first comment.
-        $result = get_activity_comments::execute($quiz->cmid, 0, 20, 'excelente');
+        // Search for "excellent" — should return only the first comment.
+        $result = get_activity_comments::execute($quiz->cmid, 0, 20, 'excellent');
         $comments = $result['comments'];
 
         $this->assertCount(1, $comments);
-        $this->assertStringContainsStringIgnoringCase('excelente', $comments[0]['feedback']);
+        $this->assertStringContainsStringIgnoringCase('excellent', $comments[0]['feedback']);
     }
 }

@@ -789,9 +789,9 @@ class helpers_test extends \externallib_advanced_testcase {
         $u2 = $this->getDataGenerator()->create_user();
         $u3 = $this->getDataGenerator()->create_user();
 
-        $this->insert_rating($quiz->cmid, $u1->id, 1, 'curso interesante contenido bueno');
-        $this->insert_rating($quiz->cmid, $u2->id, 1, 'curso excelente contenido material');
-        $this->insert_rating($quiz->cmid, $u3->id, 1, 'curso contenido de el la bueno');
+        $this->insert_rating($quiz->cmid, $u1->id, 1, 'great content very helpful resource');
+        $this->insert_rating($quiz->cmid, $u2->id, 1, 'content excellent helpful material');
+        $this->insert_rating($quiz->cmid, $u3->id, 1, 'content helpful and the good stuff');
 
         $result   = get_activity_comments::execute($quiz->cmid, 0, 20, '');
         $keywords = $result['statistics']['keywords'];
@@ -803,13 +803,13 @@ class helpers_test extends \externallib_advanced_testcase {
         $this->assertArrayHasKey('word', $keywords[0]);
         $this->assertArrayHasKey('frequency', $keywords[0]);
 
-        // 'curso' appears 1× per feedback × 3 feedbacks = 3.
-        // 'contenido' appears 1× per feedback × 3 feedbacks = 3.
-        $this->assertSame('curso', $keywords[0]['word']);
+        // 'content' appears 1× per feedback × 3 feedbacks = 3.
+        // 'helpful' appears 1× per feedback × 3 feedbacks = 3.
+        $this->assertSame('content', $keywords[0]['word']);
         $this->assertSame(3, $keywords[0]['frequency']);
 
         $words = array_column($keywords, 'word');
-        $this->assertContains('contenido', $words);
+        $this->assertContains('helpful', $words);
 
         // Stop words must not appear.
         $words = array_column($keywords, 'word');
