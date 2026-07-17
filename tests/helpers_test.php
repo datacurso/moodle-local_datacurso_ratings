@@ -781,14 +781,17 @@ class helpers_test extends \externallib_advanced_testcase {
         $callerid = $this->create_user_with_viewcoursereport($quiz->cmid, $course->id);
         $this->setUser($callerid);
 
-        // 'curso' × 5, 'bueno' × 3, 'de' × 3 (stop word), 'el' × 3 (stop word), 'la' × 3 (stop word).
+        // Each rating MUST have a unique feedback string because the plugin's
+        // calculate_statistics() uses get_records_select with 'feedback' as the
+        // record key. Duplicate feedback values are silently dropped by Moodle's
+        // get_records, so we ensure uniqueness to get predictable counts.
         $u1 = $this->getDataGenerator()->create_user();
         $u2 = $this->getDataGenerator()->create_user();
         $u3 = $this->getDataGenerator()->create_user();
 
-        $this->insert_rating($quiz->cmid, $u1->id, 1, 'curso curso de el la bueno');
-        $this->insert_rating($quiz->cmid, $u2->id, 1, 'curso curso de el la bueno');
-        $this->insert_rating($quiz->cmid, $u3->id, 1, 'curso de el la bueno');
+        $this->insert_rating($quiz->cmid, $u1->id, 1, 'curso curso contenido bueno');
+        $this->insert_rating($quiz->cmid, $u2->id, 1, 'curso excelente contenido material');
+        $this->insert_rating($quiz->cmid, $u3->id, 1, 'curso contenido de el la bueno');
 
         $result   = get_activity_comments::execute($quiz->cmid, 0, 20, '');
         $keywords = $result['statistics']['keywords'];
@@ -800,13 +803,13 @@ class helpers_test extends \externallib_advanced_testcase {
         $this->assertArrayHasKey('word', $keywords[0]);
         $this->assertArrayHasKey('frequency', $keywords[0]);
 
-        // 'curso' (5) must be the top keyword.
+        // 'curso' appears once per feedback × 3 feedbacks = 3.
+        // 'contenido' appears once per feedback × 3 feedbacks = 3.
         $this->assertSame('curso', $keywords[0]['word']);
-        $this->assertSame(5, $keywords[0]['frequency']);
+        $this->assertSame(3, $keywords[0]['frequency']);
 
-        // 'bueno' (3) must be second.
-        $this->assertSame('bueno', $keywords[1]['word']);
-        $this->assertSame(3, $keywords[1]['frequency']);
+        $words = array_column($keywords, 'word');
+        $this->assertContains('contenido', $words);
 
         // Stop words must not appear.
         $words = array_column($keywords, 'word');

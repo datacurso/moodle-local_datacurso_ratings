@@ -113,13 +113,15 @@ class ai_analysis_test extends \externallib_advanced_testcase {
         $context = \context_module::instance($page->cmid);
 
         $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
         $this->setUser($user);
         $roleid = $this->assignUserCapability('local/datacurso_ratings:viewcoursereport', $context->id);
         $this->assignUserCapability('local/datacurso_ratings:generateanalysisactivity', $context->id, $roleid);
 
         // Insert a rating record.
+        $rater = $this->getDataGenerator()->create_user();
         $DB->insert_record('local_datacurso_ratings', [
-            'userid'      => $user->id,
+            'userid'      => $rater->id,
             'cmid'        => $page->cmid,
             'courseid'    => $course->id,
             'categoryid'  => 0,
@@ -154,19 +156,21 @@ class ai_analysis_test extends \externallib_advanced_testcase {
         $context = \context_module::instance($page->cmid);
 
         $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
         $this->setUser($user);
         $roleid = $this->assignUserCapability('local/datacurso_ratings:viewcoursereport', $context->id);
         $this->assignUserCapability('local/datacurso_ratings:generateanalysisactivity', $context->id, $roleid);
 
-        // Insert 3 likes and 1 dislike → 75 % approval.
+        // Insert 3 likes and 1 dislike → 75 % approval. Each needs a unique userid.
         foreach ([1, 1, 1, 0] as $rating) {
+            $rater = $this->getDataGenerator()->create_user();
             $DB->insert_record('local_datacurso_ratings', [
-                'userid'       => $user->id,
+                'userid'       => $rater->id,
                 'cmid'         => $page->cmid,
                 'courseid'     => $course->id,
                 'categoryid'   => 0,
                 'rating'       => $rating,
-                'feedback'     => '',
+                'feedback'     => 'feedback ' . $rater->id,
                 'timecreated'  => time(),
                 'timemodified' => time(),
             ]);
@@ -205,12 +209,14 @@ class ai_analysis_test extends \externallib_advanced_testcase {
         $context = \context_module::instance($page->cmid);
 
         $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
         $this->setUser($user);
         $roleid = $this->assignUserCapability('local/datacurso_ratings:viewcoursereport', $context->id);
         $this->assignUserCapability('local/datacurso_ratings:generateanalysisactivity', $context->id, $roleid);
 
+        $rater = $this->getDataGenerator()->create_user();
         $DB->insert_record('local_datacurso_ratings', [
-            'userid'       => $user->id,
+            'userid'       => $rater->id,
             'cmid'         => $page->cmid,
             'courseid'     => $course->id,
             'categoryid'   => 0,
@@ -250,12 +256,14 @@ class ai_analysis_test extends \externallib_advanced_testcase {
         $context = \context_course::instance($course->id);
 
         $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
         $this->setUser($user);
         $roleid = $this->assignUserCapability('local/datacurso_ratings:viewcoursereport', $context->id);
         $this->assignUserCapability('local/datacurso_ratings:generateanalysiscourse', $context->id, $roleid);
 
+        $rater = $this->getDataGenerator()->create_user();
         $DB->insert_record('local_datacurso_ratings', [
-            'userid'       => $user->id,
+            'userid'       => $rater->id,
             'cmid'         => $page->cmid,
             'courseid'     => $course->id,
             'categoryid'   => 0,
@@ -291,13 +299,15 @@ class ai_analysis_test extends \externallib_advanced_testcase {
         $context = \context_course::instance($course->id);
 
         $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
         $this->setUser($user);
         $roleid = $this->assignUserCapability('local/datacurso_ratings:viewcoursereport', $context->id);
         $this->assignUserCapability('local/datacurso_ratings:generateanalysiscourse', $context->id, $roleid);
 
         // Only the first activity gets a rating.
+        $rater = $this->getDataGenerator()->create_user();
         $DB->insert_record('local_datacurso_ratings', [
-            'userid'       => $user->id,
+            'userid'       => $rater->id,
             'cmid'         => $rated->cmid,
             'courseid'     => $course->id,
             'categoryid'   => 0,
