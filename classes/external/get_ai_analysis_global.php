@@ -16,14 +16,10 @@
 
 namespace local_datacurso_ratings\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once("$CFG->libdir/externallib.php");
-
-use external_function_parameters;
-use external_single_structure;
-use external_value;
-use external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
+use core_external\external_api;
 use context_system;
 use aiprovider_datacurso\httpclient\ai_services_api;
 
@@ -93,13 +89,21 @@ class get_ai_analysis_global extends external_api {
         ];
 
         // 2. Call AI service (client).
-        $client = new ai_services_api();
+        $client = static::get_ai_client();
         $response = $client->request('POST', 'rating/general', $body);
 
         // 3. Return AI response.
         return [
             'analysis' => $response['reply'] ?? '',
         ];
+    }
+
+    /**
+     * Get the AI service client. Override in tests to inject a mock.
+     * @return ai_services_api
+     */
+    protected static function get_ai_client(): ai_services_api {
+        return new ai_services_api();
     }
 
     /**
