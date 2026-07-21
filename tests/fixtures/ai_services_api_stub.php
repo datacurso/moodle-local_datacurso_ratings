@@ -28,8 +28,6 @@
 
 namespace aiprovider_datacurso\httpclient;
 
-defined('MOODLE_INTERNAL') || die();
-
 /**
  * Minimal stub matching the interface used by external function tests.
  */
