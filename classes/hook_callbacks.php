@@ -120,10 +120,13 @@ class hook_callbacks {
         $feedbackdatalike = $feedbackpagelike->export_for_template($OUTPUT);
         $feedbackdatadislike = $feedbackpagedislike->export_for_template($OUTPUT);
 
+        $maxcommentlength = (int) get_config('local_datacurso_ratings', 'maxcommentlength') ?: 200;
+
         $html = $OUTPUT->render_from_template('local_datacurso_ratings/rate_button', [
             'cmid' => $cm->id,
             'likeItems' => $feedbackdatalike['items'],
             'dislikeItems' => $feedbackdatadislike['items'],
+            'maxcommentlength' => $maxcommentlength,
         ]);
 
         // Inject before footer.
