@@ -65,6 +65,10 @@ Feature: Rating widget visibility on supported activity types
     When I am on the "Test survey" "survey activity" page logged in as "student1"
     Then "div.local-dcr-rate" "css_element" should exist
 
+  # resource with default display redirects to pluginfile.php (raw file),
+  # bypassing the Moodle page entirely — the footer hook never fires.
+  # Using display=RESOURCELIB_DISPLAY_EMBED (5) forces Moodle to render
+  # the file inside a Moodle page where the widget can be injected.
   @javascript @MDL-INT-019
   Scenario: Widget appears on resource activity page
     Given the following "activity" exists:
@@ -74,6 +78,7 @@ Feature: Rating widget visibility on supported activity types
       | idnumber        | resource1                                  |
       | defaultfilename | mod/resource/tests/fixtures/samplefile.txt |
       | uploaded        | 1                                          |
+      | display         | 5                                          |
     When I am on the "Test resource" "resource activity" page logged in as "student1"
     Then "div.local-dcr-rate" "css_element" should exist
 
