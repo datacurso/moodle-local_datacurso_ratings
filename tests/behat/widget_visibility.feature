@@ -43,29 +43,8 @@ Feature: Rating widget visibility on supported activity types
       | wiki        |
       | workshop    |
 
-  @javascript @MDL-INT-019
-  Scenario: Widget appears on chat activity page
-    Given I enable "chat" "mod" plugin
-    And the following "activity" exists:
-      | activity | chat      |
-      | course   | C1        |
-      | name     | Test chat |
-      | idnumber | chat1     |
-    When I am on the "Test chat" "chat activity" page logged in as "student1"
-    Then "div.local-dcr-rate" "css_element" should exist
-
-  @javascript @MDL-INT-019
-  Scenario: Widget appears on survey activity page
-    Given I enable "survey" "mod" plugin
-    And the following "activity" exists:
-      | activity | survey      |
-      | course   | C1          |
-      | name     | Test survey |
-      | idnumber | survey1     |
-    When I am on the "Test survey" "survey activity" page logged in as "student1"
-    Then "div.local-dcr-rate" "css_element" should exist
-
-  # resource: the Behat generator ignores the display setting and Moodle
+  # chat and survey: removed from Moodle 5.0+. Cannot be tested across versions.
+  # resource: Behat generator ignores display setting; redirects to pluginfile.php.
   # redirects text files directly to pluginfile.php (raw content), bypassing
   # the page entirely. The widget only works when the admin configures
   # display=embed manually. This cannot be tested via Behat generators.
