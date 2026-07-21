@@ -91,7 +91,8 @@ class save_rating extends external_api {
             'courseid' => $courseid,
             'categoryid' => $categoryid,
             'rating' => $r,
-            'feedback' => \core_text::substr(trim((string)$params['feedback']), 0, 200),
+            'feedback' => \core_text::substr(trim((string)$params['feedback']), 0,
+                (int) get_config('local_datacurso_ratings', 'maxcommentlength') ?: 200),
             'timemodified' => $now,
         ];
 
