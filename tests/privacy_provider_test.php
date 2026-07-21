@@ -145,14 +145,15 @@ class privacy_provider_test extends \core_privacy\tests\provider_testcase {
     }
 
     /**
-     * Verify that a mass delete in system context removes both ratings and feedback phrases.
+     * Verify that a mass delete in system context removes ratings but preserves feedback phrases.
      *
-     * This documents the current (known-incorrect) behavior: predefined admin feedback phrases
-     * are also deleted, which is a side-effect pending correction.
+     * Predefined feedback phrases are site configuration created by the administrator:
+     * they hold no personal data (the table has no userid column), so a GDPR mass
+     * delete must leave them untouched.
      *
      * @spec MDL-INT-015 step 3
      */
-    public function test_mass_delete_in_system_context_clears_both_tables(): void {
+    public function test_mass_delete_in_system_context_preserves_feedback_phrases(): void {
         global $DB;
         $this->resetAfterTest(true);
 
@@ -171,10 +172,10 @@ class privacy_provider_test extends \core_privacy\tests\provider_testcase {
             'All ratings must be deleted after mass delete in system context.'
         );
         $this->assertEquals(
-            0,
+            1,
             $DB->count_records('local_datacurso_ratings_feedback'),
-            'All feedback phrases must also be deleted after mass delete in system context ' .
-            '(current behavior, pending correction).'
+            'Predefined feedback phrases are admin site configuration, not personal data: ' .
+            'they must survive a mass delete in system context.'
         );
     }
 }
