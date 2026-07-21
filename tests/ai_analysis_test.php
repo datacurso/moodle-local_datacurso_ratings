@@ -30,6 +30,10 @@ defined('MOODLE_INTERNAL') || die();
 global $CFG;
 require_once(__DIR__ . '/external_testcase.php');
 
+if (!class_exists('aiprovider_datacurso\httpclient\ai_services_api')) {
+    require_once(__DIR__ . '/fixtures/ai_services_api_stub.php');
+}
+
 use aiprovider_datacurso\httpclient\ai_services_api;
 
 // The testable subclasses must live in this file so the static mock client can

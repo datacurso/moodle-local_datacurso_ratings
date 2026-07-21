@@ -29,7 +29,7 @@ Feature: AI analysis button visibility based on capabilities
       | local/datacurso_ratings:viewcoursereport             | Allow      | editingteacher | Course       | C1        |
       | local/datacurso_ratings:generateanalysiscourse       | Allow      | editingteacher | Course       | C1        |
     When I am on the "Course 1" course page logged in as "teacher1"
-    And I navigate to "Reports > Activity ratings report" in current page administration
+    And I navigate to "Reports > Activity/Resource Ratings Report" in current page administration
     Then ".btn-generate-ai-course" "css_element" should exist
 
   @javascript @MDL-INT-017
@@ -39,5 +39,5 @@ Feature: AI analysis button visibility based on capabilities
       | local/datacurso_ratings:viewcoursereport             | Allow      | editingteacher | Course       | C1        |
       | local/datacurso_ratings:generateanalysiscourse       | Prohibit   | editingteacher | Course       | C1        |
     When I am on the "Course 1" course page logged in as "teacher2"
-    And I navigate to "Reports > Activity ratings report" in current page administration
+    And I navigate to "Reports > Activity/Resource Ratings Report" in current page administration
     Then ".btn-generate-ai-course" "css_element" should not exist

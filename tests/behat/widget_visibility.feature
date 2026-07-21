@@ -31,7 +31,6 @@ Feature: Rating widget visibility on supported activity types
       | modtype     |
       | assign      |
       | book        |
-      | chat        |
       | choice      |
       | data        |
       | feedback    |
@@ -41,9 +40,30 @@ Feature: Rating widget visibility on supported activity types
       | lti         |
       | page        |
       | quiz        |
-      | survey      |
       | wiki        |
       | workshop    |
+
+  @javascript @MDL-INT-019
+  Scenario: Widget appears on chat activity page
+    Given I enable "chat" "mod" plugin
+    And the following "activity" exists:
+      | activity | chat      |
+      | course   | C1        |
+      | name     | Test chat |
+      | idnumber | chat1     |
+    When I am on the "Test chat" "chat activity" page logged in as "student1"
+    Then "div.local-dcr-rate" "css_element" should exist
+
+  @javascript @MDL-INT-019
+  Scenario: Widget appears on survey activity page
+    Given I enable "survey" "mod" plugin
+    And the following "activity" exists:
+      | activity | survey      |
+      | course   | C1          |
+      | name     | Test survey |
+      | idnumber | survey1     |
+    When I am on the "Test survey" "survey activity" page logged in as "student1"
+    Then "div.local-dcr-rate" "css_element" should exist
 
   @javascript @MDL-INT-019
   Scenario: Widget appears on resource activity page
