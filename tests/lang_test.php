@@ -120,4 +120,43 @@ final class lang_test extends \basic_testcase {
             }
         }
     }
+
+    /**
+     * Every locale has full key parity with the English pack.
+     *
+     * English is the master pack: a key missing from another locale silently
+     * falls back to English in production, so parity failures are real defects.
+     * The reverse is also enforced — keys absent from English are dead strings.
+     */
+    public function test_all_locales_have_full_key_parity_with_english(): void {
+        $langdir = $this->lang_dir();
+
+        $string = [];
+        include($langdir . '/en/local_datacurso_ratings.php');
+        $englishkeys = array_keys($string);
+
+        foreach ($this->supported_locales() as $locale) {
+            if ($locale === 'en') {
+                continue;
+            }
+
+            $string = [];
+            include($langdir . '/' . $locale . '/local_datacurso_ratings.php');
+            $localekeys = array_keys($string);
+
+            $missing = array_values(array_diff($englishkeys, $localekeys));
+            $this->assertSame(
+                [],
+                $missing,
+                "Locale '{$locale}' is missing keys defined in English: " . implode(', ', $missing)
+            );
+
+            $dead = array_values(array_diff($localekeys, $englishkeys));
+            $this->assertSame(
+                [],
+                $dead,
+                "Locale '{$locale}' defines keys that do not exist in English: " . implode(', ', $dead)
+            );
+        }
+    }
 }
