@@ -79,6 +79,7 @@ $string['getstarted'] = 'Mulai';
 $string['getstarteddescription'] = 'Setelah siswa mulai menilai aktivitas dan sumber daya, umpan balik mereka akan muncul di sini dalam laporan lengkap.';
 $string['globalreportsummary'] = 'Ringkasan laporan global';
 $string['globalsatisfaction'] = 'Kepuasan global';
+$string['hidecomments'] = 'Sembunyikan komentar';
 $string['like'] = 'Suka';
 $string['likeactivitie'] = 'Suka aktivitas';
 $string['likecomment'] = 'Komentar (opsional)';

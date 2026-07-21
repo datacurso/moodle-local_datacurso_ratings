@@ -79,6 +79,7 @@ $string['getstarted'] = 'Начать';
 $string['getstarteddescription'] = 'Как только студенты начнут оценивать активности и ресурсы, их отзывы появятся здесь в полных отчетах.';
 $string['globalreportsummary'] = 'Сводка глобального отчета';
 $string['globalsatisfaction'] = 'Глобальная удовлетворенность';
+$string['hidecomments'] = 'Скрыть комментарии';
 $string['like'] = 'Нравится';
 $string['likeactivitie'] = 'Нравится активность';
 $string['likecomment'] = 'Комментарий (необязательно)';

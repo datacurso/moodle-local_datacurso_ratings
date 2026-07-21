@@ -166,8 +166,9 @@ function initTableFeatures() {
     }
 
     document.querySelectorAll('.expand-comments').forEach((button) => {
-        button.addEventListener('click', (e) => {
-            const targetSelector = e.currentTarget.getAttribute('data-target');
+        button.addEventListener('click', async(e) => {
+            const toggleButton = e.currentTarget;
+            const targetSelector = toggleButton.getAttribute('data-target');
             const commentsDiv = document.querySelector(targetSelector);
             if (!commentsDiv) {
                 return;
@@ -175,7 +176,16 @@ function initTableFeatures() {
 
             const isHidden = commentsDiv.style.display === 'none' || !commentsDiv.style.display;
             commentsDiv.style.display = isHidden ? 'block' : 'none';
-            e.currentTarget.textContent = isHidden ? 'Ocultar comentarios' : 'Ver comentarios';
+
+            try {
+                const [hidecomments, viewcomments] = await getStrings([
+                    {key: 'hidecomments', component: 'local_datacurso_ratings'},
+                    {key: 'viewcomments', component: 'local_datacurso_ratings'},
+                ]);
+                toggleButton.textContent = isHidden ? hidecomments : viewcomments;
+            } catch (error) {
+                Notification.exception(error);
+            }
         });
     });
 

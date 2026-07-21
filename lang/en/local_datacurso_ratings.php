@@ -83,6 +83,7 @@ $string['getstarteddescription'] = 'Once students start rating activities and re
 $string['gotopage'] = 'Go to page:';
 $string['globalreportsummary'] = 'Global Report Summary';
 $string['globalsatisfaction'] = 'Global Satisfaction';
+$string['hidecomments'] = 'Hide Comments';
 $string['like'] = 'Like';
 $string['likeactivitie'] = 'I Like activity';
 $string['likecomment'] = 'Comment (optional)';

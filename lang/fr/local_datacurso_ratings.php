@@ -79,6 +79,7 @@ $string['getstarted'] = 'Commencer';
 $string['getstarteddescription'] = 'Une fois que les étudiants commenceront à évaluer les activités et les ressources, leurs commentaires apparaîtront ici dans des rapports complets.';
 $string['globalreportsummary'] = 'Résumé du rapport global';
 $string['globalsatisfaction'] = 'Satisfaction globale';
+$string['hidecomments'] = 'Masquer les commentaires';
 $string['like'] = 'J\'aime';
 $string['likeactivitie'] = 'J\'aime l\'activité';
 $string['likecomment'] = 'Commentaire (optionnel)';

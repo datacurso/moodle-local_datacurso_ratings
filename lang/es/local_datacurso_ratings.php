@@ -80,6 +80,7 @@ $string['getstarteddescription'] = 'Una vez que los estudiantes comiencen a valo
 $string['gotopage'] = 'Ir a la página:';
 $string['globalreportsummary'] = 'Resumen del informe global';
 $string['globalsatisfaction'] = 'Satisfacción global';
+$string['hidecomments'] = 'Ocultar comentarios';
 $string['like'] = 'Me gusta';
 $string['likeactivitie'] = 'Me gusta la actividad';
 $string['likecomment'] = 'Comentario (opcional)';

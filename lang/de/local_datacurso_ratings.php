@@ -79,6 +79,7 @@ $string['getstarted'] = 'Loslegen';
 $string['getstarteddescription'] = 'Sobald Studierende mit der Bewertung von Aktivitäten und Ressourcen beginnen, erscheint ihr Feedback hier in vollständigen Berichten.';
 $string['globalreportsummary'] = 'Zusammenfassung des globalen Berichts';
 $string['globalsatisfaction'] = 'Globale Zufriedenheit';
+$string['hidecomments'] = 'Kommentare ausblenden';
 $string['like'] = 'Gefällt mir';
 $string['likeactivitie'] = 'Aktivität gefällt mir';
 $string['likecomment'] = 'Kommentar (optional)';
