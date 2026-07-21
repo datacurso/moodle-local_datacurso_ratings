@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+namespace local_datacurso_ratings;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
@@ -34,9 +36,10 @@ require_once($CFG->dirroot . '/local/datacurso_ratings/backup/moodle2/restore_lo
  * Test suite for course backup/restore cycle preserving plugin data.
  *
  * See MDL-INT-022 in the test specification.
+ *
+ * @covers \restore_local_datacurso_ratings_plugin
  */
-class backup_restore_test extends \advanced_testcase {
-
+final class backup_restore_test extends \advanced_testcase {
     /**
      * Backs up the given course (including user info) and returns the backup id.
      *
@@ -51,9 +54,14 @@ class backup_restore_test extends \advanced_testcase {
 
         // Do backup with default settings. MODE_IMPORT means it will just
         // create the directory and not zip it.
-        $bc = new \backup_controller(\backup::TYPE_1COURSE, $srccourse->id,
-            \backup::FORMAT_MOODLE, \backup::INTERACTIVE_NO, \backup::MODE_IMPORT,
-            $USER->id);
+        $bc = new \backup_controller(
+            \backup::TYPE_1COURSE,
+            $srccourse->id,
+            \backup::FORMAT_MOODLE,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_IMPORT,
+            $USER->id
+        );
 
         // Include user info so per-user ratings travel with the backup.
         $bc->get_plan()->get_setting('users')->set_status(\backup_setting::NOT_LOCKED);
@@ -79,11 +87,18 @@ class backup_restore_test extends \advanced_testcase {
 
         // Do restore to a new course with user info enabled.
         $newcourseid = \restore_dbops::create_new_course(
-            $srccourse->fullname, $srccourse->shortname . '_copy', $srccourse->category
+            $srccourse->fullname,
+            $srccourse->shortname . '_copy',
+            $srccourse->category
         );
-        $rc = new \restore_controller($backupid, $newcourseid,
-            \backup::INTERACTIVE_NO, \backup::MODE_GENERAL, $USER->id,
-            \backup::TARGET_NEW_COURSE);
+        $rc = new \restore_controller(
+            $backupid,
+            $newcourseid,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            $USER->id,
+            \backup::TARGET_NEW_COURSE
+        );
 
         $rc->get_plan()->get_setting('users')->set_status(\backup_setting::NOT_LOCKED);
         $rc->get_plan()->get_setting('users')->set_value(true);
@@ -118,9 +133,14 @@ class backup_restore_test extends \advanced_testcase {
 
         $backupid = $this->backup_course($srccourse);
 
-        $rc = new \restore_controller($backupid, $targetcourseid,
-            \backup::INTERACTIVE_NO, \backup::MODE_GENERAL, $USER->id,
-            \backup::TARGET_EXISTING_ADDING);
+        $rc = new \restore_controller(
+            $backupid,
+            $targetcourseid,
+            \backup::INTERACTIVE_NO,
+            \backup::MODE_GENERAL,
+            $USER->id,
+            \backup::TARGET_EXISTING_ADDING
+        );
 
         $rc->get_plan()->get_setting('users')->set_status(\backup_setting::NOT_LOCKED);
         $rc->get_plan()->get_setting('users')->set_value(true);
@@ -155,7 +175,7 @@ class backup_restore_test extends \advanced_testcase {
      * @return \restore_local_datacurso_ratings_plugin
      */
     protected function create_rating_processor(int $courseid, int $cmid): \restore_local_datacurso_ratings_plugin {
-        $task = new class($courseid, $cmid) {
+        $task = new class ($courseid, $cmid) {
             /** @var int Course id returned to the processor. */
             private $courseid;
 
@@ -192,7 +212,7 @@ class backup_restore_test extends \advanced_testcase {
             }
         };
 
-        return new class($task) extends \restore_local_datacurso_ratings_plugin {
+        return new class ($task) extends \restore_local_datacurso_ratings_plugin {
             /**
              * Bypasses the parent constructor: there is no restore step here,
              * the processor is exercised directly against injected task data.
@@ -326,8 +346,10 @@ class backup_restore_test extends \advanced_testcase {
 
         // Exactly one row was inserted for the brand-new course (this cycle only
         // exercises the insert path; the update path is covered separately below).
-        $this->assertEquals(1, $DB->count_records('local_datacurso_ratings_course_settings',
-            ['courseid' => $newcourseid]));
+        $this->assertEquals(1, $DB->count_records(
+            'local_datacurso_ratings_course_settings',
+            ['courseid' => $newcourseid]
+        ));
 
         // The source course settings are untouched.
         $srcrecord = $DB->get_record('local_datacurso_ratings_course_settings', ['courseid' => $course->id]);
@@ -352,8 +374,12 @@ class backup_restore_test extends \advanced_testcase {
         // First cycle: restore into a brand-new course, which INSERTS the row.
         local_datacurso_ratings_set_course_enabled($course->id, false);
         $newcourseid = $this->backup_and_restore($course);
-        $this->assertEquals(0, $DB->get_field('local_datacurso_ratings_course_settings', 'enabled',
-            ['courseid' => $newcourseid], MUST_EXIST));
+        $this->assertEquals(0, $DB->get_field(
+            'local_datacurso_ratings_course_settings',
+            'enabled',
+            ['courseid' => $newcourseid],
+            MUST_EXIST
+        ));
 
         // Change the source value, then restore AGAIN into the already-restored
         // course: the settings row already exists, so the update branch must run.
@@ -400,8 +426,10 @@ class backup_restore_test extends \advanced_testcase {
         $processor->process_datacurso_ratings_rating($first);
 
         // Insert path: exactly one row exists for the (cmid, userid) pair.
-        $this->assertEquals(1, $DB->count_records('local_datacurso_ratings',
-            ['cmid' => $page->cmid, 'userid' => $student->id]));
+        $this->assertEquals(1, $DB->count_records(
+            'local_datacurso_ratings',
+            ['cmid' => $page->cmid, 'userid' => $student->id]
+        ));
 
         // Second payload for the SAME (cmid, userid): the update branch must run,
         // otherwise insert_record would raise dml_write_exception (unique index).
@@ -410,8 +438,10 @@ class backup_restore_test extends \advanced_testcase {
         $second['feedback'] = 'Changed my mind';
         $processor->process_datacurso_ratings_rating($second);
 
-        $rows = $DB->get_records('local_datacurso_ratings',
-            ['cmid' => $page->cmid, 'userid' => $student->id]);
+        $rows = $DB->get_records(
+            'local_datacurso_ratings',
+            ['cmid' => $page->cmid, 'userid' => $student->id]
+        );
         $this->assertCount(1, $rows);
 
         // The single row reflects the second payload, proving the update executed.

@@ -20,8 +20,9 @@
  * @package    local_datacurso_ratings
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\external\get_courses_by_category
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,9 +33,10 @@ use local_datacurso_ratings\external\get_courses_by_category;
 
 /**
  * Test suite for the get_courses_by_category web service.
+ *
+ * @covers \local_datacurso_ratings\external\get_courses_by_category
  */
-class get_courses_by_category_test extends externallib_advanced_testcase {
-
+final class get_courses_by_category_test extends \externallib_advanced_testcase {
     /**
      * Courses in a category are listed and the site course (ID 1) is never included.
      *

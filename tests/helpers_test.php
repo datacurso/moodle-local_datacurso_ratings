@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace local_datacurso_ratings;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
@@ -35,11 +37,8 @@ use local_datacurso_ratings\external\get_activity_comments;
  * @covers \local_datacurso_ratings\external\get_ratings_report
  * @covers \local_datacurso_ratings\external\get_activity_comments
  */
-class helpers_test extends \externallib_advanced_testcase {
-
-    // -------------------------------------------------------------------------
-    // Shared helpers
-    // -------------------------------------------------------------------------
+final class helpers_test extends \externallib_advanced_testcase {
+    // Shared helpers.
 
     /**
      * Insert a rating record directly into the plugin table.
@@ -84,9 +83,7 @@ class helpers_test extends \externallib_advanced_testcase {
         return $result['courses'][0]['activities'][0]['satisfaction_class'];
     }
 
-    // -------------------------------------------------------------------------
-    // MDL-UNIT-001 — Satisfaction classification through execute()
-    // -------------------------------------------------------------------------
+    // MDL-UNIT-001 — Satisfaction classification through execute().
 
     /**
      * Activity with 80% likes produces satisfaction_class = 'success'.
@@ -330,9 +327,7 @@ class helpers_test extends \externallib_advanced_testcase {
         $this->assertSame('success', $result['courses'][0]['courseSatisfactionClass']);
     }
 
-    // -------------------------------------------------------------------------
-    // MDL-UNIT-002 — Date parsing through execute()
-    // -------------------------------------------------------------------------
+    // MDL-UNIT-002 — Date parsing through execute().
 
     /**
      * Datefrom filter applied to start of day retains ratings timestamped on that day.
@@ -368,14 +363,14 @@ class helpers_test extends \externallib_advanced_testcase {
 
         $gen      = $this->getDataGenerator();
         $course   = $gen->create_course();
-        $quizOld  = $gen->create_module('quiz', ['course' => $course->id]);
-        $quizNew  = $gen->create_module('quiz', ['course' => $course->id]);
+        $quizold  = $gen->create_module('quiz', ['course' => $course->id]);
+        $quiznew  = $gen->create_module('quiz', ['course' => $course->id]);
 
         $user = $gen->create_user();
         // Old rating: day before the filter start.
-        $this->insert_rating($quizOld->cmid, $user->id, 1, '', strtotime('2025-06-14 23:59:59'));
+        $this->insert_rating($quizold->cmid, $user->id, 1, '', strtotime('2025-06-14 23:59:59'));
         // New rating: first second of filter day.
-        $this->insert_rating($quizNew->cmid, $user->id, 1, '', strtotime('2025-06-15 00:00:00'));
+        $this->insert_rating($quiznew->cmid, $user->id, 1, '', strtotime('2025-06-15 00:00:00'));
 
         $result = get_ratings_report::execute(0, 25, '', '', 0, '2025-06-15', '');
 
@@ -385,8 +380,8 @@ class helpers_test extends \externallib_advanced_testcase {
                 $cmids[] = $a['cmid'];
             }
         }
-        $this->assertContains((int)$quizNew->cmid, $cmids, 'Rating on filter start day must appear.');
-        $this->assertNotContains((int)$quizOld->cmid, $cmids, 'Rating from day before must be excluded.');
+        $this->assertContains((int)$quiznew->cmid, $cmids, 'Rating on filter start day must appear.');
+        $this->assertNotContains((int)$quizold->cmid, $cmids, 'Rating from day before must be excluded.');
     }
 
     /**
@@ -403,8 +398,8 @@ class helpers_test extends \externallib_advanced_testcase {
         $quiz   = $gen->create_module('quiz', ['course' => $course->id]);
 
         $user       = $gen->create_user();
-        $endOfDay   = strtotime('2025-06-15 23:59:59');
-        $this->insert_rating($quiz->cmid, $user->id, 1, '', $endOfDay);
+        $endofday   = strtotime('2025-06-15 23:59:59');
+        $this->insert_rating($quiz->cmid, $user->id, 1, '', $endofday);
 
         // Filter up to 2025-06-15 — the rating at 23:59:59 must be included.
         $result = get_ratings_report::execute(0, 25, '', '', 0, '', '2025-06-15');
@@ -423,14 +418,14 @@ class helpers_test extends \externallib_advanced_testcase {
 
         $gen         = $this->getDataGenerator();
         $course      = $gen->create_course();
-        $quizBefore  = $gen->create_module('quiz', ['course' => $course->id]);
-        $quizAfter   = $gen->create_module('quiz', ['course' => $course->id]);
+        $quizbefore  = $gen->create_module('quiz', ['course' => $course->id]);
+        $quizafter   = $gen->create_module('quiz', ['course' => $course->id]);
 
         $user = $gen->create_user();
         // Rating on the allowed day.
-        $this->insert_rating($quizBefore->cmid, $user->id, 1, '', strtotime('2025-06-15 12:00:00'));
+        $this->insert_rating($quizbefore->cmid, $user->id, 1, '', strtotime('2025-06-15 12:00:00'));
         // Rating on the day after the end of the filter range.
-        $this->insert_rating($quizAfter->cmid, $user->id, 1, '', strtotime('2025-06-16 00:00:00'));
+        $this->insert_rating($quizafter->cmid, $user->id, 1, '', strtotime('2025-06-16 00:00:00'));
 
         $result = get_ratings_report::execute(0, 25, '', '', 0, '', '2025-06-15');
 
@@ -440,8 +435,8 @@ class helpers_test extends \externallib_advanced_testcase {
                 $cmids[] = $a['cmid'];
             }
         }
-        $this->assertContains((int)$quizBefore->cmid, $cmids, 'Rating within range must appear.');
-        $this->assertNotContains((int)$quizAfter->cmid, $cmids, 'Rating after end date must be excluded.');
+        $this->assertContains((int)$quizbefore->cmid, $cmids, 'Rating within range must appear.');
+        $this->assertNotContains((int)$quizafter->cmid, $cmids, 'Rating after end date must be excluded.');
     }
 
     /**
@@ -572,9 +567,7 @@ class helpers_test extends \externallib_advanced_testcase {
         $this->assertArrayHasKey('pagination', $result);
     }
 
-    // -------------------------------------------------------------------------
-    // MDL-UNIT-003 — Summary aggregation through execute()
-    // -------------------------------------------------------------------------
+    // MDL-UNIT-003 — Summary aggregation through execute().
 
     /**
      * Summary correctly aggregates total likes, dislikes, ratings, and activities across courses.
@@ -588,32 +581,32 @@ class helpers_test extends \externallib_advanced_testcase {
         $gen = $this->getDataGenerator();
 
         // Course A: quizA1 gets 2 likes, quizA2 gets 1 dislike.
-        $courseA = $gen->create_course();
-        $quizA1  = $gen->create_module('quiz', ['course' => $courseA->id]);
-        $quizA2  = $gen->create_module('quiz', ['course' => $courseA->id]);
+        $coursea = $gen->create_course();
+        $quiza1  = $gen->create_module('quiz', ['course' => $coursea->id]);
+        $quiza2  = $gen->create_module('quiz', ['course' => $coursea->id]);
 
         // Course B: quizB1 gets 3 likes, 2 dislikes.
-        $courseB = $gen->create_course();
-        $quizB1  = $gen->create_module('quiz', ['course' => $courseB->id]);
+        $courseb = $gen->create_course();
+        $quizb1  = $gen->create_module('quiz', ['course' => $courseb->id]);
 
         $users = [];
         for ($i = 0; $i < 8; $i++) {
             $users[] = $gen->create_user();
         }
 
-        // quizA1: 2 likes.
-        $this->insert_rating($quizA1->cmid, $users[0]->id, 1);
-        $this->insert_rating($quizA1->cmid, $users[1]->id, 1);
+        // 2 likes for quiza1.
+        $this->insert_rating($quiza1->cmid, $users[0]->id, 1);
+        $this->insert_rating($quiza1->cmid, $users[1]->id, 1);
 
-        // quizA2: 1 dislike.
-        $this->insert_rating($quizA2->cmid, $users[2]->id, 0);
+        // 1 dislike for quiza2.
+        $this->insert_rating($quiza2->cmid, $users[2]->id, 0);
 
-        // quizB1: 3 likes + 2 dislikes.
-        $this->insert_rating($quizB1->cmid, $users[3]->id, 1);
-        $this->insert_rating($quizB1->cmid, $users[4]->id, 1);
-        $this->insert_rating($quizB1->cmid, $users[5]->id, 1);
-        $this->insert_rating($quizB1->cmid, $users[6]->id, 0);
-        $this->insert_rating($quizB1->cmid, $users[7]->id, 0);
+        // 3 likes + 2 dislikes for quizb1.
+        $this->insert_rating($quizb1->cmid, $users[3]->id, 1);
+        $this->insert_rating($quizb1->cmid, $users[4]->id, 1);
+        $this->insert_rating($quizb1->cmid, $users[5]->id, 1);
+        $this->insert_rating($quizb1->cmid, $users[6]->id, 0);
+        $this->insert_rating($quizb1->cmid, $users[7]->id, 0);
 
         $result  = get_ratings_report::execute(0, 25, '', '', 0, '', '');
         $summary = $result['summary'];
@@ -738,9 +731,7 @@ class helpers_test extends \externallib_advanced_testcase {
         );
     }
 
-    // -------------------------------------------------------------------------
-    // MDL-UNIT-004 — Keyword extraction through get_activity_comments::execute()
-    // -------------------------------------------------------------------------
+    // MDL-UNIT-004 — Keyword extraction through get_activity_comments::execute().
 
     /**
      * Create a role with viewcoursereport capability on a given module context.
@@ -803,7 +794,7 @@ class helpers_test extends \externallib_advanced_testcase {
         $this->assertArrayHasKey('word', $keywords[0]);
         $this->assertArrayHasKey('frequency', $keywords[0]);
 
-        // 'content' and 'helpful' each appear once per feedback across all 3 records.
+        // Keywords 'content' and 'helpful' each appear once per feedback across all 3 records.
         $words = array_column($keywords, 'word');
         $this->assertContains('content', $words);
         $this->assertContains('helpful', $words);
@@ -933,7 +924,7 @@ class helpers_test extends \externallib_advanced_testcase {
         $callerid = $this->create_user_with_viewcoursereport($quiz->cmid, $course->id);
         $this->setUser($callerid);
 
-        // 'evaluación' × 3, 'enseñanza' × 2, 'diseño' × 4.
+        // Keywords 'evaluación' × 3, 'enseñanza' × 2, 'diseño' × 4.
         $u1 = $this->getDataGenerator()->create_user();
         $u2 = $this->getDataGenerator()->create_user();
         $u3 = $this->getDataGenerator()->create_user();

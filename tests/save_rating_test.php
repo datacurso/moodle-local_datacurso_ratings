@@ -21,8 +21,9 @@
  * @category   test
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\external\save_rating
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,9 +32,10 @@ require_once(__DIR__ . '/external_testcase.php');
 
 /**
  * Integration tests for the save_rating external web service.
+ *
+ * @covers \local_datacurso_ratings\external\save_rating
  */
-class save_rating_test extends \externallib_advanced_testcase {
-
+final class save_rating_test extends \externallib_advanced_testcase {
     /**
      * Provide the scenario fixture shared across test methods.
      *
@@ -58,7 +60,7 @@ class save_rating_test extends \externallib_advanced_testcase {
      * Verify that a valid like rating with optional feedback is persisted
      * with the correct course, category, and timestamp data.
      *
-     * @spec MDL-INT-002 step 1
+     * Spec: MDL-INT-002 step 1.
      */
     public function test_valid_like_rating_is_saved_with_correct_associated_data(): void {
         global $DB;
@@ -87,7 +89,7 @@ class save_rating_test extends \externallib_advanced_testcase {
     /**
      * Verify that a valid dislike rating (value 0) is accepted and persisted correctly.
      *
-     * @spec MDL-INT-002 step 1
+     * Spec: MDL-INT-002 step 1.
      */
     public function test_valid_dislike_rating_is_saved(): void {
         global $DB;
@@ -108,7 +110,7 @@ class save_rating_test extends \externallib_advanced_testcase {
     /**
      * Verify that rating values other than 0 and 1 are rejected with an exception.
      *
-     * @spec MDL-INT-002 step 2
+     * Spec: MDL-INT-002 step 2.
      */
     public function test_invalid_rating_value_throws_exception(): void {
         $this->resetAfterTest(true);
@@ -124,7 +126,7 @@ class save_rating_test extends \externallib_advanced_testcase {
      * Verify that a second rating from the same user on the same activity updates
      * the existing record without creating a duplicate.
      *
-     * @spec MDL-INT-002 step 3
+     * Spec: MDL-INT-002 step 3.
      */
     public function test_second_rating_updates_existing_record_without_duplicate(): void {
         global $DB;
@@ -150,7 +152,7 @@ class save_rating_test extends \externallib_advanced_testcase {
     /**
      * Verify that feedback text exceeding 200 characters is truncated to the maximum allowed length.
      *
-     * @spec MDL-INT-002 step 4
+     * Spec: MDL-INT-002 step 4.
      */
     public function test_feedback_is_truncated_to_maximum_length(): void {
         global $DB;
@@ -159,12 +161,15 @@ class save_rating_test extends \externallib_advanced_testcase {
         [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
         $this->setUser($student);
 
-        $long_feedback = str_repeat('a', 250);
-        \local_datacurso_ratings\external\save_rating::execute($quiz->cmid, 1, $long_feedback);
+        $longfeedback = str_repeat('a', 250);
+        \local_datacurso_ratings\external\save_rating::execute($quiz->cmid, 1, $longfeedback);
 
         $record = $DB->get_record('local_datacurso_ratings', ['cmid' => $quiz->cmid, 'userid' => $student->id]);
         $this->assertNotFalse($record);
-        $this->assertLessThanOrEqual(200, \core_text::strlen($record->feedback),
-            'Feedback must be truncated to at most 200 characters.');
+        $this->assertLessThanOrEqual(
+            200,
+            \core_text::strlen($record->feedback),
+            'Feedback must be truncated to at most 200 characters.'
+        );
     }
 }

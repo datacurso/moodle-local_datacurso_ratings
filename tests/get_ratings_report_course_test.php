@@ -20,8 +20,9 @@
  * @package    local_datacurso_ratings
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\external\get_ratings_report_course
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,9 +33,10 @@ use local_datacurso_ratings\external\get_ratings_report_course;
 
 /**
  * Test suite for the get_ratings_report_course web service.
+ *
+ * @covers \local_datacurso_ratings\external\get_ratings_report_course
  */
-class get_ratings_report_course_test extends externallib_advanced_testcase {
-
+final class get_ratings_report_course_test extends \externallib_advanced_testcase {
     /**
      * Insert a rating record directly into the plugin table.
      *
@@ -71,24 +73,28 @@ class get_ratings_report_course_test extends externallib_advanced_testcase {
 
         // Create a user with the viewcoursereport capability (not admin — admin sees hidden CMs).
         $role = $gen->create_role();
-        assign_capability('local/datacurso_ratings:viewcoursereport', CAP_ALLOW,
-            $role, context_course::instance($course->id));
+        assign_capability(
+            'local/datacurso_ratings:viewcoursereport',
+            CAP_ALLOW,
+            $role,
+            \context_course::instance($course->id)
+        );
 
         $user = $gen->create_user();
         $gen->enrol_user($user->id, $course->id);
-        role_assign($role, $user->id, context_course::instance($course->id));
+        role_assign($role, $user->id, \context_course::instance($course->id));
         $this->setUser($user);
 
         // Visible quiz.
-        $visibleQuiz = $gen->create_module('quiz', ['course' => $course->id, 'visible' => 1]);
+        $visiblequiz = $gen->create_module('quiz', ['course' => $course->id, 'visible' => 1]);
         // Hidden quiz.
-        $hiddenQuiz  = $gen->create_module('quiz', ['course' => $course->id, 'visible' => 0]);
+        $hiddenquiz  = $gen->create_module('quiz', ['course' => $course->id, 'visible' => 0]);
 
         $result = get_ratings_report_course::execute((int)$course->id);
 
         $cmids = array_column($result, 'cmid');
-        $this->assertContains((int)$visibleQuiz->cmid, $cmids);
-        $this->assertNotContains((int)$hiddenQuiz->cmid, $cmids);
+        $this->assertContains((int)$visiblequiz->cmid, $cmids);
+        $this->assertNotContains((int)$hiddenquiz->cmid, $cmids);
     }
 
     /**
@@ -103,12 +109,16 @@ class get_ratings_report_course_test extends externallib_advanced_testcase {
         $course = $gen->create_course();
 
         $role = $gen->create_role();
-        assign_capability('local/datacurso_ratings:viewcoursereport', CAP_ALLOW,
-            $role, context_course::instance($course->id));
+        assign_capability(
+            'local/datacurso_ratings:viewcoursereport',
+            CAP_ALLOW,
+            $role,
+            \context_course::instance($course->id)
+        );
 
         $user = $gen->create_user();
         $gen->enrol_user($user->id, $course->id);
-        role_assign($role, $user->id, context_course::instance($course->id));
+        role_assign($role, $user->id, \context_course::instance($course->id));
         $this->setUser($user);
 
         $quiz = $gen->create_module('quiz', ['course' => $course->id, 'name' => 'MetricsQuiz']);

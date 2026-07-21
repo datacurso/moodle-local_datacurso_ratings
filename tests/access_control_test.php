@@ -20,10 +20,9 @@
  * @package    local_datacurso_ratings
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\external\get_ratings_report_course
- * @covers \local_datacurso_ratings\external\get_ratings_report
- * @covers \local_datacurso_ratings\external\feedback_service
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -36,9 +35,12 @@ use local_datacurso_ratings\external\feedback_service;
 
 /**
  * Test suite for access control on AI buttons and admin-only services.
+ *
+ * @covers \local_datacurso_ratings\external\get_ratings_report_course
+ * @covers \local_datacurso_ratings\external\get_ratings_report
+ * @covers \local_datacurso_ratings\external\feedback_service
  */
-class access_control_test extends externallib_advanced_testcase {
-
+final class access_control_test extends \externallib_advanced_testcase {
     /**
      * Helper: assign a role with specific capabilities in a given context.
      *

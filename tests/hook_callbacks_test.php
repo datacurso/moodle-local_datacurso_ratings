@@ -21,9 +21,9 @@
  * @category   test
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\hook_callbacks
- * @covers \local_datacurso_ratings\hook\course_form_hook
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -34,9 +34,11 @@ require_once($CFG->dirroot . '/course/tests/fixtures/testable_course_edit_form.p
 
 /**
  * Tests for widget visibility guards (INT-011) and course form hook (INT-012).
+ *
+ * @covers \local_datacurso_ratings\hook_callbacks
+ * @covers \local_datacurso_ratings\hook\course_form_hook
  */
-class hook_callbacks_test extends \advanced_testcase {
-
+final class hook_callbacks_test extends \advanced_testcase {
     /**
      * Configure PAGE context and globals to simulate a module page for a supported module.
      *
@@ -63,15 +65,13 @@ class hook_callbacks_test extends \advanced_testcase {
         parent::tearDown();
     }
 
-    // -----------------------------------------------------------------------
-    // INT-011 — Widget visibility guards
-    // -----------------------------------------------------------------------
+    // INT-011 — Widget visibility guards.
 
     /**
      * Verify that the widget is injected for an authenticated non-guest enrolled student
      * when the plugin is enabled globally and for the course.
      *
-     * @spec MDL-INT-011 step 1
+     * Spec: MDL-INT-011 step 1.
      */
     public function test_widget_appears_for_authenticated_enrolled_student(): void {
         $this->resetAfterTest(true);
@@ -100,7 +100,7 @@ class hook_callbacks_test extends \advanced_testcase {
      * Verify that the widget is NOT injected when the current page is an editing page
      * (modedit.php, edit.php, mod_form.php, action=edit, action=editsection).
      *
-     * @spec MDL-INT-011 step 2
+     * Spec: MDL-INT-011 step 2.
      */
     public function test_widget_absent_on_edit_pages(): void {
         $this->resetAfterTest(true);
@@ -137,7 +137,7 @@ class hook_callbacks_test extends \advanced_testcase {
     /**
      * Verify that the widget is NOT injected when the plugin is globally disabled.
      *
-     * @spec MDL-INT-011 step 3
+     * Spec: MDL-INT-011 step 3.
      */
     public function test_widget_absent_when_globally_disabled(): void {
         $this->resetAfterTest(true);
@@ -164,7 +164,7 @@ class hook_callbacks_test extends \advanced_testcase {
     /**
      * Verify that the widget is NOT injected for unsupported module types (label, subsection).
      *
-     * @spec MDL-INT-011 step 4
+     * Spec: MDL-INT-011 step 4.
      */
     public function test_widget_absent_for_unsupported_module_types(): void {
         $this->resetAfterTest(true);
@@ -197,7 +197,7 @@ class hook_callbacks_test extends \advanced_testcase {
     /**
      * Verify that the widget is NOT injected for guest users.
      *
-     * @spec MDL-INT-011 step 5
+     * Spec: MDL-INT-011 step 5.
      */
     public function test_widget_absent_for_guest_user(): void {
         $this->resetAfterTest(true);
@@ -222,7 +222,7 @@ class hook_callbacks_test extends \advanced_testcase {
      * Verify that the widget is NOT injected when the plugin is disabled at the course level,
      * even if it is enabled globally.
      *
-     * @spec MDL-INT-011 step 6
+     * Spec: MDL-INT-011 step 6.
      */
     public function test_widget_absent_when_course_disabled(): void {
         $this->resetAfterTest(true);
@@ -249,14 +249,12 @@ class hook_callbacks_test extends \advanced_testcase {
         $this->assertEmpty($hook->get_output(), 'Widget must NOT be injected when the plugin is disabled for the course.');
     }
 
-    // -----------------------------------------------------------------------
-    // INT-012 — Course form hook
-    // -----------------------------------------------------------------------
+    // INT-012 — Course form hook.
 
     /**
      * Verify that the course edit form includes the plugin section when the plugin is globally enabled.
      *
-     * @spec MDL-INT-012 step 1
+     * Spec: MDL-INT-012 step 1.
      */
     public function test_course_form_includes_plugin_section_when_globally_enabled(): void {
         $this->resetAfterTest(true);
@@ -291,7 +289,7 @@ class hook_callbacks_test extends \advanced_testcase {
     /**
      * Verify that the default value is enabled (1) when no prior course configuration exists.
      *
-     * @spec MDL-INT-012 step 2
+     * Spec: MDL-INT-012 step 2.
      */
     public function test_course_form_default_is_enabled_when_no_prior_config(): void {
         $this->resetAfterTest(true);
@@ -328,7 +326,7 @@ class hook_callbacks_test extends \advanced_testcase {
     /**
      * Verify that submitting the course form persists the chosen enabled/disabled value.
      *
-     * @spec MDL-INT-012 step 3
+     * Spec: MDL-INT-012 step 3.
      */
     public function test_course_form_submission_persists_config(): void {
         global $DB;
@@ -362,7 +360,7 @@ class hook_callbacks_test extends \advanced_testcase {
     /**
      * Verify that submitting the course form does NOT persist config when the plugin is globally disabled.
      *
-     * @spec MDL-INT-012 step 4
+     * Spec: MDL-INT-012 step 4.
      */
     public function test_course_form_submission_skips_save_when_globally_disabled(): void {
         global $DB;

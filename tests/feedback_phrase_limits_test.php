@@ -20,8 +20,9 @@
  * @package    local_datacurso_ratings
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\external\feedback_service
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -39,9 +40,10 @@ use local_datacurso_ratings\external\feedback_service;
  * therefore written to DOCUMENT the expected behavior.  If the service stores
  * the phrase without rejection or truncation that test will FAIL, which is
  * intentional: the failure reveals a missing validation feature (MDL-INT-020).
+ *
+ * @covers \local_datacurso_ratings\external\feedback_service
  */
-class feedback_phrase_limits_test extends externallib_advanced_testcase {
-
+final class feedback_phrase_limits_test extends \externallib_advanced_testcase {
     /** Maximum allowed phrase length defined by the spec. */
     const MAX_PHRASE_LENGTH = 150;
 
@@ -96,19 +98,19 @@ class feedback_phrase_limits_test extends externallib_advanced_testcase {
         $phrase = str_repeat('b', self::MAX_PHRASE_LENGTH + 1);
         $this->assertSame(self::MAX_PHRASE_LENGTH + 1, strlen($phrase));
 
-        $threwException = false;
+        $threwexception = false;
         $id = null;
 
         try {
             $result = feedback_service::add_feedback($phrase, 'dislike');
             $id = $result['id'] ?? null;
         } catch (\invalid_parameter_exception $e) {
-            $threwException = true;
+            $threwexception = true;
         } catch (\moodle_exception $e) {
-            $threwException = true;
+            $threwexception = true;
         }
 
-        if ($threwException) {
+        if ($threwexception) {
             // Rejection path: the service correctly refused the over-limit phrase.
             $this->assertTrue(true, 'Service correctly rejected phrase exceeding the limit.');
             return;

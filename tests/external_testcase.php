@@ -14,6 +14,18 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+/**
+ * Shared bootstrap for external function test cases.
+ *
+ * Loads the web service test helpers so the plugin tests can extend
+ * externallib_advanced_testcase.
+ *
+ * @package    local_datacurso_ratings
+ * @category   test
+ * @copyright  2025 Industria Elearning
+ * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ */
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;

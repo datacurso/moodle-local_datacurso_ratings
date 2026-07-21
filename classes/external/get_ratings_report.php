@@ -239,7 +239,9 @@ class get_ratings_report extends external_api {
             $courses[$index]['courseSatisfaction'] = $coursetotal > 0
                 ? number_format(($course['courseLikes'] * 100) / $coursetotal, 1)
                 : '0.0';
-            $courses[$index]['courseSatisfactionClass'] = self::get_satisfaction_class((float)$courses[$index]['courseSatisfaction']);
+            $courses[$index]['courseSatisfactionClass'] = self::get_satisfaction_class(
+                (float)$courses[$index]['courseSatisfaction']
+            );
         }
 
         $summary = self::build_summary($courses);

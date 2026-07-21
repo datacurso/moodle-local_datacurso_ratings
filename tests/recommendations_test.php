@@ -21,8 +21,9 @@
  * @category   test
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\recommendations\service
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,9 +32,10 @@ require_once(__DIR__ . '/external_testcase.php');
 
 /**
  * Tests for the course recommendations algorithm (INT-013).
+ *
+ * @covers \local_datacurso_ratings\recommendations\service
  */
-class recommendations_test extends \externallib_advanced_testcase {
-
+final class recommendations_test extends \externallib_advanced_testcase {
     /**
      * Insert a rating record directly into the database for test setup.
      *
@@ -62,7 +64,7 @@ class recommendations_test extends \externallib_advanced_testcase {
      * Verify that the recommendation score is computed as
      * score = (0.6 * category_preference_pct) + (0.4 * course_satisfaction).
      *
-     * @spec MDL-INT-013 step 1
+     * Spec: MDL-INT-013 step 1.
      */
     public function test_score_formula_is_applied_correctly(): void {
         $this->resetAfterTest(true);
@@ -106,7 +108,7 @@ class recommendations_test extends \externallib_advanced_testcase {
 
         $this->assertNotNull($found, 'Target course should appear as a recommendation.');
 
-        // category_preference_pct = 100 (1 like, 0 dislikes in that category).
+        // The category_preference_pct is 100 (1 like, 0 dislikes in that category).
         // course_satisfaction = 100 (1 like, 0 dislikes in that course).
         // expected score = (0.6 * 100) + (0.4 * 100) = 100.
         $expectedscore = round((0.6 * $found['category_preference_pct']) + (0.4 * $found['course_satisfaction']), 2);
@@ -116,7 +118,7 @@ class recommendations_test extends \externallib_advanced_testcase {
     /**
      * Verify that courses in which the user is already enrolled are excluded from recommendations.
      *
-     * @spec MDL-INT-013 step 2
+     * Spec: MDL-INT-013 step 2.
      */
     public function test_enrolled_courses_are_excluded(): void {
         $this->resetAfterTest(true);
@@ -148,7 +150,7 @@ class recommendations_test extends \externallib_advanced_testcase {
     /**
      * Verify that categories with a user preference ratio below 80% are filtered out.
      *
-     * @spec MDL-INT-013 step 3
+     * Spec: MDL-INT-013 step 3.
      */
     public function test_low_preference_categories_are_filtered(): void {
         $this->resetAfterTest(true);
@@ -192,7 +194,7 @@ class recommendations_test extends \externallib_advanced_testcase {
      * Verify that the global rating ratio is used as a fallback when the user has no
      * preference data for a category.
      *
-     * @spec MDL-INT-013 step 4
+     * Spec: MDL-INT-013 step 4.
      */
     public function test_global_ratio_is_fallback_when_no_category_data(): void {
         $this->resetAfterTest(true);
@@ -233,7 +235,7 @@ class recommendations_test extends \externallib_advanced_testcase {
     /**
      * Verify that the result set is limited to the requested number and sorted by score descending.
      *
-     * @spec MDL-INT-013 step 5
+     * Spec: MDL-INT-013 step 5.
      */
     public function test_limit_is_respected_and_results_are_sorted_by_score_descending(): void {
         $this->resetAfterTest(true);

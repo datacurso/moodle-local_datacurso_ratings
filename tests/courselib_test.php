@@ -21,10 +21,9 @@
  * @category   test
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings_is_enabled_for_course
- * @covers \local_datacurso_ratings_set_course_enabled
- * @covers \local_datacurso_ratings_get_course_enabled
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -33,14 +32,17 @@ require_once($CFG->dirroot . '/local/datacurso_ratings/courselib.php');
 
 /**
  * Unit tests for course-level plugin configuration helpers.
+ *
+ * @covers ::local_datacurso_ratings_is_enabled_for_course
+ * @covers ::local_datacurso_ratings_set_course_enabled
+ * @covers ::local_datacurso_ratings_get_course_enabled
  */
-class courselib_test extends \advanced_testcase {
-
+final class courselib_test extends \advanced_testcase {
     /**
      * Verify that the plugin is considered enabled when the global config is active
      * and no course-level record exists.
      *
-     * @spec MDL-INT-001 step 1
+     * Spec: MDL-INT-001 step 1.
      */
     public function test_plugin_is_enabled_when_global_on_and_no_course_record(): void {
         $this->resetAfterTest(true);
@@ -55,7 +57,7 @@ class courselib_test extends \advanced_testcase {
      * Verify that a disabled global config overrides any course-level config,
      * resulting in the plugin being disabled regardless of course settings.
      *
-     * @spec MDL-INT-001 step 2
+     * Spec: MDL-INT-001 step 2.
      */
     public function test_global_disabled_prevails_over_course_config(): void {
         $this->resetAfterTest(true);
@@ -73,7 +75,7 @@ class courselib_test extends \advanced_testcase {
      * Verify that a course-level record with enabled=false disables the plugin
      * for that specific course even when the global config is active.
      *
-     * @spec MDL-INT-001 step 3
+     * Spec: MDL-INT-001 step 3.
      */
     public function test_course_record_disabled_disables_plugin_for_that_course(): void {
         $this->resetAfterTest(true);
@@ -90,7 +92,7 @@ class courselib_test extends \advanced_testcase {
      * Verify that inserting a new course configuration and subsequently updating it
      * produces the expected persisted value in both cases.
      *
-     * @spec MDL-INT-001 step 4
+     * Spec: MDL-INT-001 step 4.
      */
     public function test_insert_and_update_course_config(): void {
         global $DB;
@@ -117,7 +119,7 @@ class courselib_test extends \advanced_testcase {
      * Verify that querying configuration for a course with no record returns null,
      * not false or any other falsy value.
      *
-     * @spec MDL-INT-001 step 5
+     * Spec: MDL-INT-001 step 5.
      */
     public function test_get_course_enabled_returns_null_when_no_record(): void {
         $this->resetAfterTest(true);

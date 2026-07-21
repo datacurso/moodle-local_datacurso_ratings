@@ -20,8 +20,9 @@
  * @package    local_datacurso_ratings
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\external\get_activity_comments
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,9 +33,10 @@ use local_datacurso_ratings\external\get_activity_comments;
 
 /**
  * Test suite for the get_activity_comments web service.
+ *
+ * @covers \local_datacurso_ratings\external\get_activity_comments
  */
-class get_activity_comments_test extends externallib_advanced_testcase {
-
+final class get_activity_comments_test extends \externallib_advanced_testcase {
     /**
      * Insert a rating with feedback into the plugin table.
      *
@@ -72,11 +74,15 @@ class get_activity_comments_test extends externallib_advanced_testcase {
 
         // Assign viewcoursereport to the calling user.
         $role = $gen->create_role();
-        assign_capability('local/datacurso_ratings:viewcoursereport', CAP_ALLOW,
-            $role, context_module::instance($quiz->cmid));
+        assign_capability(
+            'local/datacurso_ratings:viewcoursereport',
+            CAP_ALLOW,
+            $role,
+            \context_module::instance($quiz->cmid)
+        );
         $caller = $gen->create_user();
         $gen->enrol_user($caller->id, $course->id);
-        role_assign($role, $caller->id, context_module::instance($quiz->cmid));
+        role_assign($role, $caller->id, \context_module::instance($quiz->cmid));
         $this->setUser($caller);
 
         $u1 = $gen->create_user();
@@ -96,7 +102,7 @@ class get_activity_comments_test extends externallib_advanced_testcase {
         $this->assertEquals(1, $stats['dislike_comments']);
         $this->assertGreaterThan(0, $stats['avg_length']);
 
-        // "content" appears in all three comments and should surface as a keyword.
+        // The word "content" appears in all three comments and should surface as a keyword.
         $words = array_column($stats['keywords'], 'word');
         $this->assertContains('content', $words);
     }
@@ -114,11 +120,15 @@ class get_activity_comments_test extends externallib_advanced_testcase {
         $quiz   = $gen->create_module('quiz', ['course' => $course->id]);
 
         $role = $gen->create_role();
-        assign_capability('local/datacurso_ratings:viewcoursereport', CAP_ALLOW,
-            $role, context_module::instance($quiz->cmid));
+        assign_capability(
+            'local/datacurso_ratings:viewcoursereport',
+            CAP_ALLOW,
+            $role,
+            \context_module::instance($quiz->cmid)
+        );
         $caller = $gen->create_user();
         $gen->enrol_user($caller->id, $course->id);
-        role_assign($role, $caller->id, context_module::instance($quiz->cmid));
+        role_assign($role, $caller->id, \context_module::instance($quiz->cmid));
         $this->setUser($caller);
 
         $result = get_activity_comments::execute($quiz->cmid, 0, 20, '');
@@ -145,11 +155,15 @@ class get_activity_comments_test extends externallib_advanced_testcase {
         $quiz   = $gen->create_module('quiz', ['course' => $course->id]);
 
         $role = $gen->create_role();
-        assign_capability('local/datacurso_ratings:viewcoursereport', CAP_ALLOW,
-            $role, context_module::instance($quiz->cmid));
+        assign_capability(
+            'local/datacurso_ratings:viewcoursereport',
+            CAP_ALLOW,
+            $role,
+            \context_module::instance($quiz->cmid)
+        );
         $caller = $gen->create_user();
         $gen->enrol_user($caller->id, $course->id);
-        role_assign($role, $caller->id, context_module::instance($quiz->cmid));
+        role_assign($role, $caller->id, \context_module::instance($quiz->cmid));
         $this->setUser($caller);
 
         // Insert 5 comments but request only 2 per page.
@@ -166,9 +180,9 @@ class get_activity_comments_test extends externallib_advanced_testcase {
         $this->assertGreaterThan(1, $pagination['totalpages']);
 
         // Last page should NOT have more.
-        $lastPage = $pagination['totalpages'] - 1;
-        $resultLast = get_activity_comments::execute($quiz->cmid, $lastPage, 2, '');
-        $this->assertFalse((bool)$resultLast['pagination']['hasmore']);
+        $lastpage = $pagination['totalpages'] - 1;
+        $resultlast = get_activity_comments::execute($quiz->cmid, $lastpage, 2, '');
+        $this->assertFalse((bool)$resultlast['pagination']['hasmore']);
     }
 
     /**
@@ -184,11 +198,15 @@ class get_activity_comments_test extends externallib_advanced_testcase {
         $quiz   = $gen->create_module('quiz', ['course' => $course->id]);
 
         $role = $gen->create_role();
-        assign_capability('local/datacurso_ratings:viewcoursereport', CAP_ALLOW,
-            $role, context_module::instance($quiz->cmid));
+        assign_capability(
+            'local/datacurso_ratings:viewcoursereport',
+            CAP_ALLOW,
+            $role,
+            \context_module::instance($quiz->cmid)
+        );
         $caller = $gen->create_user();
         $gen->enrol_user($caller->id, $course->id);
-        role_assign($role, $caller->id, context_module::instance($quiz->cmid));
+        role_assign($role, $caller->id, \context_module::instance($quiz->cmid));
         $this->setUser($caller);
 
         $u1 = $gen->create_user();

@@ -24,13 +24,14 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
+namespace local_datacurso_ratings;
 
 /**
  * Test suite for language file coverage across all supported locales.
+ *
+ * @coversNothing
  */
-class lang_test extends \basic_testcase {
-
+final class lang_test extends \basic_testcase {
     /**
      * Absolute path to the plugin's lang directory.
      *
@@ -97,12 +98,14 @@ class lang_test extends \basic_testcase {
 
             if (!file_exists($filepath)) {
                 // Already caught by the previous test; skip here to avoid duplicate failures.
-                $this->markTestIncomplete("Lang file missing for '{$locale}' — see test_lang_files_exist_for_all_supported_locales.");
+                $this->markTestIncomplete(
+                    "Lang file missing for '{$locale}' — see test_lang_files_exist_for_all_supported_locales."
+                );
             }
 
             // Load the lang file into an isolated $string array.
             $string = [];
-            include $filepath;
+            include($filepath);
 
             foreach ($this->required_string_keys() as $key) {
                 $this->assertArrayHasKey(

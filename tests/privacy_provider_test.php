@@ -21,16 +21,16 @@
  * @category   test
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\privacy\provider
  */
 
-defined('MOODLE_INTERNAL') || die();
+namespace local_datacurso_ratings;
 
 /**
  * Tests for GDPR compliance — export, selective delete, and mass delete (INT-015).
+ *
+ * @covers \local_datacurso_ratings\privacy\provider
  */
-class privacy_provider_test extends \core_privacy\tests\provider_testcase {
-
+final class privacy_provider_test extends \core_privacy\tests\provider_testcase {
     /**
      * Insert a rating record directly for test setup using a real course module.
      *
@@ -78,7 +78,7 @@ class privacy_provider_test extends \core_privacy\tests\provider_testcase {
     /**
      * Verify that all ratings for a user are exported correctly (3 ratings = 3 records).
      *
-     * @spec MDL-INT-015 step 1
+     * Spec: MDL-INT-015 step 1.
      */
     public function test_export_user_data_returns_all_ratings(): void {
         global $DB;
@@ -98,7 +98,11 @@ class privacy_provider_test extends \core_privacy\tests\provider_testcase {
         $this->assertNotEmpty($contextlist->get_contextids(), 'Context list must not be empty for a user with ratings.');
 
         // Build an approved context list using the system context.
-        $approvedids     = new \core_privacy\local\request\approved_contextlist($user, 'local_datacurso_ratings', [(string)$syscontext->id]);
+        $approvedids = new \core_privacy\local\request\approved_contextlist(
+            $user,
+            'local_datacurso_ratings',
+            [(string)$syscontext->id]
+        );
         \local_datacurso_ratings\privacy\provider::export_user_data($approvedids);
 
         // The writer should have received data for this user.
@@ -112,7 +116,7 @@ class privacy_provider_test extends \core_privacy\tests\provider_testcase {
     /**
      * Verify that deleting user A's data does not affect user B's ratings.
      *
-     * @spec MDL-INT-015 step 2
+     * Spec: MDL-INT-015 step 2.
      */
     public function test_delete_user_data_does_not_affect_other_users(): void {
         global $DB;
@@ -151,7 +155,7 @@ class privacy_provider_test extends \core_privacy\tests\provider_testcase {
      * they hold no personal data (the table has no userid column), so a GDPR mass
      * delete must leave them untouched.
      *
-     * @spec MDL-INT-015 step 3
+     * Spec: MDL-INT-015 step 3.
      */
     public function test_mass_delete_in_system_context_preserves_feedback_phrases(): void {
         global $DB;

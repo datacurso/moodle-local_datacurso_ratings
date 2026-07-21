@@ -21,10 +21,9 @@
  * @category   test
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\external\get_ai_analysis_comments
- * @covers \local_datacurso_ratings\external\get_ai_analysis_course
- * @covers \local_datacurso_ratings\external\get_ai_analysis_global
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -33,9 +32,11 @@ require_once(__DIR__ . '/external_testcase.php');
 
 use aiprovider_datacurso\httpclient\ai_services_api;
 
-// ---------------------------------------------------------------------------
+// The testable subclasses must live in this file so the static mock client can
+// be injected into each external function under test.
+// phpcs:disable PSR1.Classes.ClassDeclaration.MultipleClasses
+
 // Testable subclasses — override get_ai_client() to inject a PHPUnit mock.
-// ---------------------------------------------------------------------------
 
 /**
  * Testable subclass of get_ai_analysis_comments.
@@ -85,15 +86,16 @@ class testable_get_ai_analysis_global extends \local_datacurso_ratings\external\
     }
 }
 
-// ---------------------------------------------------------------------------
-// Test class
-// ---------------------------------------------------------------------------
+// Test class.
 
 /**
  * Integration tests for MDL-INT-008, MDL-INT-009 and MDL-INT-010.
+ *
+ * @covers \local_datacurso_ratings\external\get_ai_analysis_comments
+ * @covers \local_datacurso_ratings\external\get_ai_analysis_course
+ * @covers \local_datacurso_ratings\external\get_ai_analysis_global
  */
-class ai_analysis_test extends \externallib_advanced_testcase {
-
+final class ai_analysis_test extends \externallib_advanced_testcase {
     /**
      * Reset all static mock clients after each test to avoid cross-test pollution.
      */
@@ -104,14 +106,12 @@ class ai_analysis_test extends \externallib_advanced_testcase {
         parent::tearDown();
     }
 
-    // -----------------------------------------------------------------------
-    // MDL-INT-008 — AI analysis of activity comments
-    // -----------------------------------------------------------------------
+    // MDL-INT-008 — AI analysis of activity comments.
 
     /**
      * Verify that the AI analysis returns non-empty text when an activity has ratings.
      *
-     * @spec MDL-INT-008 step 1
+     * Spec: MDL-INT-008 step 1.
      */
     public function test_comments_analysis_returns_text_for_activity_with_ratings(): void {
         global $DB;
@@ -155,7 +155,7 @@ class ai_analysis_test extends \externallib_advanced_testcase {
      * Verify that the approval percentage is calculated correctly and forwarded
      * to the AI service as part of the request payload.
      *
-     * @spec MDL-INT-008 step 2
+     * Spec: MDL-INT-008 step 2.
      */
     public function test_comments_analysis_sends_correct_approval_percent(): void {
         global $DB;
@@ -208,7 +208,7 @@ class ai_analysis_test extends \externallib_advanced_testcase {
      * branch, since ai_services_api::request() returns ?array) is handled gracefully
      * and produces an empty string rather than an error.
      *
-     * @spec MDL-INT-008 step 3
+     * Spec: MDL-INT-008 step 3.
      */
     public function test_comments_analysis_handles_null_ai_response(): void {
         global $DB;
@@ -243,19 +243,20 @@ class ai_analysis_test extends \externallib_advanced_testcase {
 
         $result = testable_get_ai_analysis_comments::execute($page->cmid);
 
-        $this->assertSame('', $result['ai_analysis_comment'],
-            'Null AI response must produce an empty string, not an error.');
+        $this->assertSame(
+            '',
+            $result['ai_analysis_comment'],
+            'Null AI response must produce an empty string, not an error.'
+        );
     }
 
-    // -----------------------------------------------------------------------
-    // MDL-INT-009 — AI analysis of course metrics
-    // -----------------------------------------------------------------------
+    // MDL-INT-009 — AI analysis of course metrics.
 
     /**
      * Verify that the course AI analysis returns non-empty text when the course
      * has at least one activity with ratings.
      *
-     * @spec MDL-INT-009 step 1
+     * Spec: MDL-INT-009 step 1.
      */
     public function test_course_analysis_returns_text_for_course_with_rated_activities(): void {
         global $DB;
@@ -296,7 +297,7 @@ class ai_analysis_test extends \externallib_advanced_testcase {
      * Verify that activities without ratings are excluded from the payload sent
      * to the AI service, and that rated_activities count is accurate.
      *
-     * @spec MDL-INT-009 step 2
+     * Spec: MDL-INT-009 step 2.
      */
     public function test_course_analysis_excludes_unrated_activities_from_payload(): void {
         global $DB;
@@ -345,21 +346,25 @@ class ai_analysis_test extends \externallib_advanced_testcase {
         testable_get_ai_analysis_course::execute($course->id);
 
         $this->assertNotNull($capturedbody, 'Expected AI client to be called.');
-        $this->assertSame(1, $capturedbody['rated_activities'],
-            'Only the one rated activity should be counted in rated_activities.');
-        $this->assertCount(1, $capturedbody['activities'],
-            'Unrated activity must be excluded from the activities array sent to the AI.');
+        $this->assertSame(
+            1,
+            $capturedbody['rated_activities'],
+            'Only the one rated activity should be counted in rated_activities.'
+        );
+        $this->assertCount(
+            1,
+            $capturedbody['activities'],
+            'Unrated activity must be excluded from the activities array sent to the AI.'
+        );
     }
 
-    // -----------------------------------------------------------------------
-    // MDL-INT-010 — Global platform AI analysis
-    // -----------------------------------------------------------------------
+    // MDL-INT-010 — Global platform AI analysis.
 
     /**
      * Verify that the global AI analysis returns text when rating data exists
      * in the platform.
      *
-     * @spec MDL-INT-010 step 1
+     * Spec: MDL-INT-010 step 1.
      */
     public function test_global_analysis_returns_text_when_data_exists(): void {
         global $DB;
@@ -397,7 +402,7 @@ class ai_analysis_test extends \externallib_advanced_testcase {
      * Verify that the global AI analysis does not produce a division-by-zero error
      * when there are no ratings in the platform.
      *
-     * @spec MDL-INT-010 step 2
+     * Spec: MDL-INT-010 step 2.
      */
     public function test_global_analysis_handles_zero_ratings_without_division_by_zero(): void {
         global $DB;
@@ -427,11 +432,20 @@ class ai_analysis_test extends \externallib_advanced_testcase {
         $result = testable_get_ai_analysis_global::execute();
 
         $this->assertNotNull($capturedbody, 'Expected AI client to be called.');
-        $this->assertSame(0, $capturedbody['approvalpercent'],
-            'approvalpercent must be 0 when there are no ratings, not a division-by-zero error.');
-        $this->assertSame(0, $capturedbody['like'],
-            'like count must be 0 when there are no ratings.');
-        $this->assertSame(0, $capturedbody['dislike'],
-            'dislike count must be 0 when there are no ratings.');
+        $this->assertSame(
+            0,
+            $capturedbody['approvalpercent'],
+            'approvalpercent must be 0 when there are no ratings, not a division-by-zero error.'
+        );
+        $this->assertSame(
+            0,
+            $capturedbody['like'],
+            'like count must be 0 when there are no ratings.'
+        );
+        $this->assertSame(
+            0,
+            $capturedbody['dislike'],
+            'dislike count must be 0 when there are no ratings.'
+        );
     }
 }

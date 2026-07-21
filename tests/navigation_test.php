@@ -21,8 +21,9 @@
  * @category   test
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers ::local_datacurso_ratings_extend_navigation_course
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,22 +32,23 @@ require_once($CFG->dirroot . '/local/datacurso_ratings/lib.php');
 
 /**
  * Tests for the course navigation report link (INT-016).
+ *
+ * @covers ::local_datacurso_ratings_extend_navigation_course
  */
-class navigation_test extends \advanced_testcase {
-
+final class navigation_test extends \advanced_testcase {
     /**
      * Build a minimal navigation node tree that simulates the course navigation
      * with a "coursereports" child node.
      *
-     * @return navigation_node
+     * @return \navigation_node
      */
-    private function build_navigation_with_reports(): navigation_node {
-        $root = navigation_node::create('Root', null, navigation_node::TYPE_ROOTNODE, null, 'root');
+    private function build_navigation_with_reports(): \navigation_node {
+        $root = \navigation_node::create('Root', null, \navigation_node::TYPE_ROOTNODE, null, 'root');
 
-        $reportsnode = navigation_node::create(
+        $reportsnode = \navigation_node::create(
             'Reports',
             null,
-            navigation_node::TYPE_CONTAINER,
+            \navigation_node::TYPE_CONTAINER,
             null,
             'coursereports'
         );
@@ -59,7 +61,7 @@ class navigation_test extends \advanced_testcase {
      * Verify that the report link is added to course navigation for users with the
      * viewcoursereport capability.
      *
-     * @spec MDL-INT-016 step 1
+     * Spec: MDL-INT-016 step 1.
      */
     public function test_report_link_appears_for_user_with_capability(): void {
         $this->resetAfterTest(true);
@@ -91,7 +93,7 @@ class navigation_test extends \advanced_testcase {
      * Verify that the report link is NOT added to course navigation for users without
      * the viewcoursereport capability.
      *
-     * @spec MDL-INT-016 step 2
+     * Spec: MDL-INT-016 step 2.
      */
     public function test_report_link_absent_for_user_without_capability(): void {
         $this->resetAfterTest(true);

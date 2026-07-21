@@ -21,8 +21,9 @@
  * @category   test
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\task\update_recommendations_cache
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -31,14 +32,15 @@ require_once(__DIR__ . '/external_testcase.php');
 
 /**
  * Tests for the scheduled task that rebuilds the recommendations cache (INT-014).
+ *
+ * @covers \local_datacurso_ratings\task\update_recommendations_cache
  */
-class update_recommendations_cache_test extends \externallib_advanced_testcase {
-
+final class update_recommendations_cache_test extends \externallib_advanced_testcase {
     /**
      * Verify that the task recalculates recommendations for every active user
      * and stores an entry in the cache for each one.
      *
-     * @spec MDL-INT-014 step 1
+     * Spec: MDL-INT-014 step 1.
      */
     public function test_task_rebuilds_cache_for_all_active_users(): void {
         global $DB;
@@ -72,7 +74,7 @@ class update_recommendations_cache_test extends \externallib_advanced_testcase {
     /**
      * Verify that each user receives at most the maximum configured number of recommendations (50).
      *
-     * @spec MDL-INT-014 step 2
+     * Spec: MDL-INT-014 step 2.
      */
     public function test_each_user_receives_at_most_maximum_recommendations(): void {
         global $DB;

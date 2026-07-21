@@ -20,8 +20,9 @@
  * @package    local_datacurso_ratings
  * @copyright  2025 Industria Elearning
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @covers \local_datacurso_ratings\external\get_ratings_report
  */
+
+namespace local_datacurso_ratings;
 
 defined('MOODLE_INTERNAL') || die();
 
@@ -32,9 +33,10 @@ use local_datacurso_ratings\external\get_ratings_report;
 
 /**
  * Test suite for the get_ratings_report web service.
+ *
+ * @covers \local_datacurso_ratings\external\get_ratings_report
  */
-class get_ratings_report_test extends externallib_advanced_testcase {
-
+final class get_ratings_report_test extends \externallib_advanced_testcase {
     /**
      * Insert a rating record directly into the plugin table.
      *
@@ -50,7 +52,7 @@ class get_ratings_report_test extends externallib_advanced_testcase {
         $DB->insert_record('local_datacurso_ratings', (object)[
             'cmid'         => $cmid,
             'userid'       => $userid,
-            'courseid'     => 0, // not relevant for these tests
+            'courseid'     => 0, // Not relevant for these tests.
             'categoryid'   => 0,
             'rating'       => $rating,
             'feedback'     => $feedback,
@@ -70,24 +72,24 @@ class get_ratings_report_test extends externallib_advanced_testcase {
 
         $gen = $this->getDataGenerator();
 
-        $catA = $gen->create_category();
-        $catB = $gen->create_category();
+        $cata = $gen->create_category();
+        $catb = $gen->create_category();
 
-        $courseA = $gen->create_course(['category' => $catA->id]);
-        $courseB = $gen->create_course(['category' => $catB->id]);
+        $coursea = $gen->create_course(['category' => $cata->id]);
+        $courseb = $gen->create_course(['category' => $catb->id]);
 
-        $quizA = $gen->create_module('quiz', ['course' => $courseA->id]);
-        $quizB = $gen->create_module('quiz', ['course' => $courseB->id]);
+        $quiza = $gen->create_module('quiz', ['course' => $coursea->id]);
+        $quizb = $gen->create_module('quiz', ['course' => $courseb->id]);
 
         $user = $gen->create_user();
-        $this->insert_rating($quizA->cmid, $user->id, 1);
-        $this->insert_rating($quizB->cmid, $user->id, 1);
+        $this->insert_rating($quiza->cmid, $user->id, 1);
+        $this->insert_rating($quizb->cmid, $user->id, 1);
 
-        $result = get_ratings_report::execute(0, 25, '', '', (int)$catA->id, '', '');
+        $result = get_ratings_report::execute(0, 25, '', '', (int)$cata->id, '', '');
 
         $courseids = array_column($result['courses'], 'courseid');
-        $this->assertContains((int)$courseA->id, $courseids);
-        $this->assertNotContains((int)$courseB->id, $courseids);
+        $this->assertContains((int)$coursea->id, $courseids);
+        $this->assertNotContains((int)$courseb->id, $courseids);
     }
 
     /**
@@ -101,15 +103,15 @@ class get_ratings_report_test extends externallib_advanced_testcase {
 
         $gen = $this->getDataGenerator();
         $course = $gen->create_course();
-        $quizOld = $gen->create_module('quiz', ['course' => $course->id]);
-        $quizNew = $gen->create_module('quiz', ['course' => $course->id]);
+        $quizold = $gen->create_module('quiz', ['course' => $course->id]);
+        $quiznew = $gen->create_module('quiz', ['course' => $course->id]);
 
         $user = $gen->create_user();
 
-        // "old" rating: 2024-03-01
-        $this->insert_rating($quizOld->cmid, $user->id, 1, '', strtotime('2024-03-01 12:00:00'));
-        // "new" rating: 2025-06-15
-        $this->insert_rating($quizNew->cmid, $user->id, 1, '', strtotime('2025-06-15 12:00:00'));
+        // The "old" rating: 2024-03-01.
+        $this->insert_rating($quizold->cmid, $user->id, 1, '', strtotime('2024-03-01 12:00:00'));
+        // The "new" rating: 2025-06-15.
+        $this->insert_rating($quiznew->cmid, $user->id, 1, '', strtotime('2025-06-15 12:00:00'));
 
         // Filter to 2025 only.
         $result = get_ratings_report::execute(0, 25, '', '', 0, '2025-01-01', '2025-12-31');
@@ -122,8 +124,8 @@ class get_ratings_report_test extends externallib_advanced_testcase {
             }
         }
 
-        $this->assertContains((int)$quizNew->cmid, $cmids);
-        $this->assertNotContains((int)$quizOld->cmid, $cmids);
+        $this->assertContains((int)$quiznew->cmid, $cmids);
+        $this->assertNotContains((int)$quizold->cmid, $cmids);
     }
 
     /**
@@ -136,17 +138,17 @@ class get_ratings_report_test extends externallib_advanced_testcase {
         $this->setAdminUser();
 
         $gen = $this->getDataGenerator();
-        $courseAlpha = $gen->create_course(['fullname' => 'Alpha Course']);
-        $courseBeta  = $gen->create_course(['fullname' => 'Beta Course']);
+        $coursealpha = $gen->create_course(['fullname' => 'Alpha Course']);
+        $coursebeta  = $gen->create_course(['fullname' => 'Beta Course']);
 
-        $quizFoo = $gen->create_module('quiz', ['course' => $courseAlpha->id, 'name' => 'FooQuiz']);
-        $quizBar = $gen->create_module('quiz', ['course' => $courseAlpha->id, 'name' => 'BarQuiz']);
-        $quizBeta = $gen->create_module('quiz', ['course' => $courseBeta->id, 'name' => 'FooQuiz']);
+        $quizfoo = $gen->create_module('quiz', ['course' => $coursealpha->id, 'name' => 'FooQuiz']);
+        $quizbar = $gen->create_module('quiz', ['course' => $coursealpha->id, 'name' => 'BarQuiz']);
+        $quizbeta = $gen->create_module('quiz', ['course' => $coursebeta->id, 'name' => 'FooQuiz']);
 
         $user = $gen->create_user();
-        $this->insert_rating($quizFoo->cmid, $user->id, 1);
-        $this->insert_rating($quizBar->cmid, $user->id, 1);
-        $this->insert_rating($quizBeta->cmid, $user->id, 1);
+        $this->insert_rating($quizfoo->cmid, $user->id, 1);
+        $this->insert_rating($quizbar->cmid, $user->id, 1);
+        $this->insert_rating($quizbeta->cmid, $user->id, 1);
 
         // Filter by activity name "Foo".
         $result = get_ratings_report::execute(0, 25, 'Foo', '', 0, '', '');
@@ -162,8 +164,8 @@ class get_ratings_report_test extends externallib_advanced_testcase {
         // Filter by course name "Alpha".
         $result2 = get_ratings_report::execute(0, 25, '', 'Alpha', 0, '', '');
         $courseids2 = array_column($result2['courses'], 'courseid');
-        $this->assertContains((int)$courseAlpha->id, $courseids2);
-        $this->assertNotContains((int)$courseBeta->id, $courseids2);
+        $this->assertContains((int)$coursealpha->id, $courseids2);
+        $this->assertNotContains((int)$coursebeta->id, $courseids2);
     }
 
     /**
@@ -232,20 +234,20 @@ class get_ratings_report_test extends externallib_advanced_testcase {
 
         $gen = $this->getDataGenerator();
         $course = $gen->create_course();
-        $quizA  = $gen->create_module('quiz', ['course' => $course->id]);
-        $quizB  = $gen->create_module('quiz', ['course' => $course->id]);
+        $quiza  = $gen->create_module('quiz', ['course' => $course->id]);
+        $quizb  = $gen->create_module('quiz', ['course' => $course->id]);
 
         $user1 = $gen->create_user();
         $user2 = $gen->create_user();
         $user3 = $gen->create_user();
 
-        // quizA: 2 likes, 1 dislike.
-        $this->insert_rating($quizA->cmid, $user1->id, 1);
-        $this->insert_rating($quizA->cmid, $user2->id, 1);
-        $this->insert_rating($quizA->cmid, $user3->id, 0);
+        // 2 likes and 1 dislike for quiza.
+        $this->insert_rating($quiza->cmid, $user1->id, 1);
+        $this->insert_rating($quiza->cmid, $user2->id, 1);
+        $this->insert_rating($quiza->cmid, $user3->id, 0);
 
-        // quizB: 1 like.
-        $this->insert_rating($quizB->cmid, $user1->id, 1);
+        // 1 like for quizb.
+        $this->insert_rating($quizb->cmid, $user1->id, 1);
 
         $result = get_ratings_report::execute(0, 25, '', '', 0, '', '');
         $summary = $result['summary'];
