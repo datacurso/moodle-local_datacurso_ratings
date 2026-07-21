@@ -39,6 +39,7 @@ use local_datacurso_ratings\external\feedback_service;
  * @covers \local_datacurso_ratings\external\get_ratings_report_course
  * @covers \local_datacurso_ratings\external\get_ratings_report
  * @covers \local_datacurso_ratings\external\feedback_service
+ * @covers \local_datacurso_ratings\external\get_activity_comments
  */
 final class access_control_test extends \externallib_advanced_testcase {
     /**
@@ -128,10 +129,71 @@ final class access_control_test extends \externallib_advanced_testcase {
     }
 
     /**
+     * A user with viewcoursereport AND generateanalysisactivity receives
+     * can_generate_activity_ai = true in the activity comments response.
+     *
+     * MDL-INT-017
+     */
+    public function test_user_with_activity_ai_capability_gets_flag_true(): void {
+        $this->resetAfterTest(true);
+
+        $gen    = $this->getDataGenerator();
+        $course = $gen->create_course();
+        $quiz   = $gen->create_module('quiz', ['course' => $course->id]);
+        $cmctx  = \context_module::instance($quiz->cmid);
+
+        $user = $gen->create_user();
+        $gen->enrol_user($user->id, $course->id, 'student');
+        $this->assign_role_with_caps($user->id, $cmctx->id, [
+            'local/datacurso_ratings:viewcoursereport',
+            'local/datacurso_ratings:generateanalysisactivity',
+        ]);
+        $this->setUser($user);
+
+        $result = \local_datacurso_ratings\external\get_activity_comments::execute($quiz->cmid);
+
+        $this->assertTrue(
+            $result['can_generate_activity_ai'],
+            'Expected can_generate_activity_ai = true for user with generateanalysisactivity.'
+        );
+    }
+
+    /**
+     * A user with viewcoursereport but WITHOUT generateanalysisactivity receives
+     * can_generate_activity_ai = false in the activity comments response.
+     *
+     * MDL-INT-017
+     */
+    public function test_user_without_activity_ai_capability_gets_flag_false(): void {
+        $this->resetAfterTest(true);
+
+        $gen    = $this->getDataGenerator();
+        $course = $gen->create_course();
+        $quiz   = $gen->create_module('quiz', ['course' => $course->id]);
+        $cmctx  = \context_module::instance($quiz->cmid);
+
+        $user = $gen->create_user();
+        $gen->enrol_user($user->id, $course->id, 'student');
+
+        $roleid = create_role('testrole_noactai_' . uniqid(), 'testrole_noactai_' . uniqid(), '');
+        assign_capability('local/datacurso_ratings:viewcoursereport', CAP_ALLOW, $roleid, $cmctx->id);
+        assign_capability('local/datacurso_ratings:generateanalysisactivity', CAP_PROHIBIT, $roleid, $cmctx->id);
+        role_assign($roleid, $user->id, $cmctx->id);
+        $this->setUser($user);
+
+        $result = \local_datacurso_ratings\external\get_activity_comments::execute($quiz->cmid);
+
+        $this->assertFalse(
+            $result['can_generate_activity_ai'],
+            'Expected can_generate_activity_ai = false for user without generateanalysisactivity.'
+        );
+    }
+
+    /**
      * A non-admin calling get_ratings_report::execute() receives a
      * required_capability_exception.
      *
-     * MDL-INT-018 step 1
+     * MDL-INT-018
      */
     public function test_non_admin_cannot_access_general_ratings_report(): void {
         $this->resetAfterTest(true);
