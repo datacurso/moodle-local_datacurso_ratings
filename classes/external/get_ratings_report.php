@@ -16,15 +16,11 @@
 
 namespace local_datacurso_ratings\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once("$CFG->libdir/externallib.php");
-
-use external_function_parameters;
-use external_value;
-use external_single_structure;
-use external_multiple_structure;
-use external_api;
+use core_external\external_function_parameters;
+use core_external\external_value;
+use core_external\external_single_structure;
+use core_external\external_multiple_structure;
+use core_external\external_api;
 use context_system;
 
 /**
@@ -243,7 +239,9 @@ class get_ratings_report extends external_api {
             $courses[$index]['courseSatisfaction'] = $coursetotal > 0
                 ? number_format(($course['courseLikes'] * 100) / $coursetotal, 1)
                 : '0.0';
-            $courses[$index]['courseSatisfactionClass'] = self::get_satisfaction_class((float)$courses[$index]['courseSatisfaction']);
+            $courses[$index]['courseSatisfactionClass'] = self::get_satisfaction_class(
+                (float)$courses[$index]['courseSatisfaction']
+            );
         }
 
         $summary = self::build_summary($courses);

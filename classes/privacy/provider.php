@@ -56,17 +56,6 @@ class provider implements
             'privacy:metadata:local_datacurso_ratings'
         );
 
-        $collection->add_database_table(
-            'local_datacurso_ratings_feedback',
-            [
-                'feedbacktext' => 'privacy:metadata:local_datacurso_ratings_feedback:feedbacktext',
-                'type'         => 'privacy:metadata:local_datacurso_ratings_feedback:type',
-                'timecreated'  => 'privacy:metadata:local_datacurso_ratings_feedback:timecreated',
-                'timemodified' => 'privacy:metadata:local_datacurso_ratings_feedback:timemodified',
-            ],
-            'privacy:metadata:local_datacurso_ratings_feedback'
-        );
-
         return $collection;
     }
 
@@ -146,7 +135,6 @@ class provider implements
 
         if ($context->contextlevel == CONTEXT_SYSTEM) {
             $DB->delete_records('local_datacurso_ratings');
-            $DB->delete_records('local_datacurso_ratings_feedback');
         }
     }
 

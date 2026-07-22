@@ -61,5 +61,14 @@ if ($hassiteconfig) {
         1
     ));
 
+    // Max character length for student comments.
+    $settingspage->add(new admin_setting_configtext(
+        'local_datacurso_ratings/maxcommentlength',
+        get_string('maxcommentlength', 'local_datacurso_ratings'),
+        get_string('maxcommentlength_desc', 'local_datacurso_ratings'),
+        200,
+        PARAM_INT
+    ));
+
     $ADMIN->add('local_datacurso_ratings_category', $settingspage);
 }
