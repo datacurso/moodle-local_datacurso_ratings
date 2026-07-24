@@ -85,17 +85,25 @@ class save_rating extends external_api {
             ['cmid' => $cm->id, 'userid' => $USER->id]
         );
 
+        $feedback = trim((string)$params['feedback']);
+
+        // The comment limit only governs free-text student input: predefined admin
+        // phrases have their own length validation and must be stored in full.
+        if ($feedback !== '' && !self::is_predefined_phrase($feedback)) {
+            $feedback = \core_text::substr(
+                $feedback,
+                0,
+                (int) get_config('local_datacurso_ratings', 'maxcommentlength') ?: 200
+            );
+        }
+
         $data = (object)[
             'cmid' => $cm->id,
             'userid' => $USER->id,
             'courseid' => $courseid,
             'categoryid' => $categoryid,
             'rating' => $r,
-            'feedback' => \core_text::substr(
-                trim((string)$params['feedback']),
-                0,
-                (int) get_config('local_datacurso_ratings', 'maxcommentlength') ?: 200
-            ),
+            'feedback' => $feedback,
             'timemodified' => $now,
         ];
 
@@ -108,6 +116,19 @@ class save_rating extends external_api {
         }
 
         return ['status' => true];
+    }
+
+    /**
+     * Check whether the given feedback text matches a predefined admin phrase.
+     *
+     * @param string $feedback Feedback text as received from the client
+     * @return bool
+     */
+    private static function is_predefined_phrase(string $feedback): bool {
+        global $DB;
+
+        $compare = $DB->sql_compare_text('feedbacktext', 255) . ' = ' . $DB->sql_compare_text(':feedbacktext', 255);
+        return $DB->record_exists_select('local_datacurso_ratings_feedback', $compare, ['feedbacktext' => $feedback]);
     }
 
     /**
