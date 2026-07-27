@@ -172,4 +172,62 @@ final class save_rating_test extends \externallib_advanced_testcase {
             'Feedback must be truncated to at most 200 characters.'
         );
     }
+
+    /**
+     * Verify that a predefined admin phrase longer than the configured comment limit
+     * is stored in full: the limit only governs free-text student comments, while
+     * predefined phrases are admin configuration with their own length validation.
+     */
+    public function test_predefined_phrase_is_not_truncated_by_comment_limit(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+
+        set_config('maxcommentlength', 10, 'local_datacurso_ratings');
+
+        $phrase = 'The content was very clear and useful';
+        $now = time();
+        $DB->insert_record('local_datacurso_ratings_feedback', (object)[
+            'feedbacktext' => $phrase,
+            'type'         => 'like',
+            'timecreated'  => $now,
+            'timemodified' => $now,
+        ]);
+
+        $this->setUser($student);
+        \local_datacurso_ratings\external\save_rating::execute($quiz->cmid, 1, $phrase);
+
+        $record = $DB->get_record('local_datacurso_ratings', ['cmid' => $quiz->cmid, 'userid' => $student->id]);
+        $this->assertNotFalse($record);
+        $this->assertSame(
+            $phrase,
+            $record->feedback,
+            'A predefined admin phrase must be stored in full even when it exceeds maxcommentlength.'
+        );
+    }
+
+    /**
+     * Verify that free-text feedback still honours a custom configured comment limit.
+     */
+    public function test_free_text_feedback_is_truncated_to_configured_limit(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+
+        set_config('maxcommentlength', 10, 'local_datacurso_ratings');
+
+        $this->setUser($student);
+        $freetext = 'This free-text comment is clearly longer than ten characters';
+        \local_datacurso_ratings\external\save_rating::execute($quiz->cmid, 0, $freetext);
+
+        $record = $DB->get_record('local_datacurso_ratings', ['cmid' => $quiz->cmid, 'userid' => $student->id]);
+        $this->assertNotFalse($record);
+        $this->assertSame(
+            10,
+            \core_text::strlen($record->feedback),
+            'Free-text feedback must be truncated to the configured limit.'
+        );
+    }
 }

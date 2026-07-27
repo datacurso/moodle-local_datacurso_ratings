@@ -145,10 +145,15 @@ export const init = (cmid) => {
 
         let feedback = '';
         if (selected) {
-            feedback = selected.value === 'other' ? (fbInput?.value || '').trim() : selected.value;
+            if (selected.value === 'other') {
+                // The comment limit only applies to free-text input; predefined
+                // phrases are admin configuration and travel unmodified.
+                const maxlength = parseInt(fbInput?.getAttribute('maxlength') || '', 10) || MAX_FEEDBACK_LENGTH;
+                feedback = (fbInput?.value || '').trim().slice(0, maxlength);
+            } else {
+                feedback = selected.value;
+            }
         }
-
-        feedback = feedback.slice(0, MAX_FEEDBACK_LENGTH);
 
         sendRating(cmid, rating, feedback);
     });
