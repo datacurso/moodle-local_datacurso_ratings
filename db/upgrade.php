@@ -113,5 +113,16 @@ function xmldb_local_datacurso_ratings_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026031701, 'local', 'datacurso_ratings');
     }
 
+    if ($oldversion < 2026092401) {
+        // Privacy provider now scopes ratings to module contexts and declares the
+        // Datacurso AI external location; db/events.php registers cleanup observers.
+        // db/access.php adds local/datacurso_ratings:rate, moves the AI analysis
+        // capabilities to course/module context and drops the unused
+        // viewgeneralreport and generateanalysisgeneral capabilities.
+        // No schema change: the savepoint refreshes the privacy metadata, event and
+        // capability caches.
+        upgrade_plugin_savepoint(true, 2026092401, 'local', 'datacurso_ratings');
+    }
+
     return true;
 }

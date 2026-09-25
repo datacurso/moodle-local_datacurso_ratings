@@ -65,16 +65,17 @@ class feedback_page implements renderable, templatable {
     public function export_for_template(renderer_base $output) {
         $items = [];
         foreach ($this->items as $rec) {
+            // Export the raw phrase: Mustache escapes it on output, and the widget posts
+            // the value back verbatim so it must match the stored phrase exactly.
             $items[] = [
                 'id' => $rec->id,
-                'feedbacktext' => format_text($rec->feedbacktext, FORMAT_PLAIN),
+                'feedbacktext' => $rec->feedbacktext,
             ];
         }
 
         return [
             'items' => $items,
             'type' => $this->type,
-            'sesskey' => sesskey(),
         ];
     }
 }

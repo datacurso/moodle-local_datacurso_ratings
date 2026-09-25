@@ -98,4 +98,72 @@ final class update_recommendations_cache_test extends \externallib_advanced_test
             'Each user must receive at most 50 recommendations (the task-configured maximum).'
         );
     }
+
+    /**
+     * The task must cache exactly what the service returns for each user; it only
+     * precomputes the global ratio once instead of per user, without altering results.
+     */
+    public function test_cached_recommendations_match_direct_service_call(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        $gen      = $this->getDataGenerator();
+        $category = $gen->create_category();
+        $user     = $gen->create_user(['deleted' => 0, 'suspended' => 0, 'confirmed' => 1]);
+
+        // Ratings from other users so the global ratio passes the 80% threshold and
+        // an unenrolled course becomes a recommendation.
+        $ratedcourse = $gen->create_course(['category' => $category->id, 'visible' => 1]);
+        for ($i = 0; $i < 5; $i++) {
+            $rater = $gen->create_user();
+            $page  = $gen->create_module('page', ['course' => $ratedcourse->id]);
+            $DB->insert_record('local_datacurso_ratings', (object)[
+                'userid'       => $rater->id,
+                'cmid'         => $page->cmid,
+                'courseid'     => $ratedcourse->id,
+                'categoryid'   => $category->id,
+                'rating'       => 1,
+                'feedback'     => '',
+                'timecreated'  => time(),
+                'timemodified' => time(),
+            ]);
+        }
+        $gen->create_course(['category' => $category->id, 'visible' => 1]);
+
+        $cache = \cache::make('local_datacurso_ratings', 'recommendations');
+        $cache->purge();
+
+        $task = new \local_datacurso_ratings\task\update_recommendations_cache();
+        $task->execute();
+
+        $cached = $cache->get("user_{$user->id}");
+        $this->assertNotEmpty($cached);
+
+        $direct = \local_datacurso_ratings\recommendations\service::get_recommendations_for_user($user->id, 50);
+        $this->assertSame($direct, $cached);
+    }
+
+    /**
+     * Deleted, suspended and unconfirmed users are skipped by the task.
+     */
+    public function test_inactive_users_are_not_cached(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        $gen       = $this->getDataGenerator();
+        $active    = $gen->create_user(['deleted' => 0, 'suspended' => 0, 'confirmed' => 1]);
+        $suspended = $gen->create_user(['suspended' => 1]);
+        $deleted   = $gen->create_user();
+        $DB->set_field('user', 'deleted', 1, ['id' => $deleted->id]);
+
+        $cache = \cache::make('local_datacurso_ratings', 'recommendations');
+        $cache->purge();
+
+        $task = new \local_datacurso_ratings\task\update_recommendations_cache();
+        $task->execute();
+
+        $this->assertNotFalse($cache->get("user_{$active->id}"));
+        $this->assertFalse($cache->get("user_{$suspended->id}"));
+        $this->assertFalse($cache->get("user_{$deleted->id}"));
+    }
 }

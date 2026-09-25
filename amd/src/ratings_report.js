@@ -25,6 +25,7 @@ import Ajax from 'core/ajax';
 import Templates from 'core/templates';
 import Notification from 'core/notification';
 import {getStrings} from 'core/str';
+import {toCsvRow} from 'local_datacurso_ratings/csv_utils';
 
 const ALLOWED_PER_PAGE = [5, 10, 25, 50, 100];
 
@@ -309,8 +310,8 @@ const exportToCSV = async() => {
     });
 
     const csvcontent = [
-        headers.join(','),
-        ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
+        toCsvRow(headers),
+        ...rows.map(toCsvRow),
     ].join('\n');
 
     const blob = new Blob(['\ufeff' + csvcontent], {type: 'text/csv;charset=utf-8;'});
@@ -335,6 +336,14 @@ const bindControls = () => {
     const categoryFilterInput = document.querySelector('[data-action="global-report-category-filter"]');
     const dateFromInput = document.querySelector('[data-action="global-report-date-from"]');
     const dateToInput = document.querySelector('[data-action="global-report-date-to"]');
+    const reloadButton = document.querySelector('[data-action="global-report-reload"]');
+
+    if (reloadButton) {
+        reloadButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            window.location.reload();
+        });
+    }
 
     if (dateFromInput) {
         dateFromInput.value = state.datefrom;

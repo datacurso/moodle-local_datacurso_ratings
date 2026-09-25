@@ -56,6 +56,11 @@ class hook_callbacks {
 
         $cm = $PAGE->cm;
 
+        // The user must be allowed to rate activities in this module context.
+        if (!has_capability('local/datacurso_ratings:rate', $PAGE->context)) {
+            return;
+        }
+
         // Check if plugin is enabled globally.
         if (!get_config('local_datacurso_ratings', 'enabled')) {
             return;
@@ -85,32 +90,7 @@ class hook_callbacks {
             return;
         }
 
-        $coremodules = [
-            'resource',
-            'folder',
-            'page',
-            'url',
-            'imscp',
-            'book',
-            'assign',
-            'chat',
-            'choice',
-            'data',
-            'feedback',
-            'forum',
-            'glossary',
-            'lesson',
-            'quiz',
-            'scorm',
-            'survey',
-            'wiki',
-            'workshop',
-            'lti',
-            'h5pactivity',
-            'hvp',
-        ];
-
-        if (!in_array($cm->modname, $coremodules)) {
+        if (!local_datacurso_ratings_is_module_supported($cm->modname)) {
             return;
         }
 
@@ -120,13 +100,11 @@ class hook_callbacks {
         $feedbackdatalike = $feedbackpagelike->export_for_template($OUTPUT);
         $feedbackdatadislike = $feedbackpagedislike->export_for_template($OUTPUT);
 
-        $maxcommentlength = (int) get_config('local_datacurso_ratings', 'maxcommentlength') ?: 200;
-
         $html = $OUTPUT->render_from_template('local_datacurso_ratings/rate_button', [
             'cmid' => $cm->id,
             'likeItems' => $feedbackdatalike['items'],
             'dislikeItems' => $feedbackdatadislike['items'],
-            'maxcommentlength' => $maxcommentlength,
+            'maxcommentlength' => local_datacurso_ratings_get_max_comment_length(),
         ]);
 
         // Inject before footer.

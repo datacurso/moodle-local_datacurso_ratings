@@ -29,6 +29,7 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once(__DIR__ . '/external_testcase.php');
+require_once($CFG->dirroot . '/local/datacurso_ratings/courselib.php');
 
 /**
  * Integration tests for the save_rating external web service.
@@ -45,6 +46,9 @@ final class save_rating_test extends \externallib_advanced_testcase {
      */
     private function create_course_with_quiz_and_student(): array {
         $generator = $this->getDataGenerator();
+
+        // The external function enforces the global switch server side.
+        set_config('enabled', 1, 'local_datacurso_ratings');
 
         $category = $generator->create_category();
         $course   = $generator->create_course(['category' => $category->id]);
@@ -208,6 +212,42 @@ final class save_rating_test extends \externallib_advanced_testcase {
     }
 
     /**
+     * A predefined phrase containing HTML-special characters must be exported raw to the
+     * widget (Mustache escapes it once) so the value posted back matches the stored phrase
+     * and is therefore exempt from the free-text limit.
+     */
+    public function test_predefined_phrase_with_special_characters_round_trips_unescaped(): void {
+        global $DB, $OUTPUT;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+
+        set_config('maxcommentlength', 5, 'local_datacurso_ratings');
+
+        $phrase = 'Clear & useful "notes"';
+        $now = time();
+        $DB->insert_record('local_datacurso_ratings_feedback', (object)[
+            'feedbacktext' => $phrase,
+            'type'         => 'like',
+            'timecreated'  => $now,
+            'timemodified' => $now,
+        ]);
+
+        $page = new \local_datacurso_ratings\output\feedback_page('like');
+        $data = $page->export_for_template($OUTPUT);
+        $this->assertCount(1, $data['items']);
+        $this->assertSame($phrase, $data['items'][0]['feedbacktext']);
+        $this->assertArrayNotHasKey('sesskey', $data);
+
+        $this->setUser($student);
+        \local_datacurso_ratings\external\save_rating::execute($quiz->cmid, 1, $data['items'][0]['feedbacktext']);
+
+        $record = $DB->get_record('local_datacurso_ratings', ['cmid' => $quiz->cmid, 'userid' => $student->id]);
+        $this->assertNotFalse($record);
+        $this->assertSame($phrase, $record->feedback);
+    }
+
+    /**
      * Verify that free-text feedback still honours a custom configured comment limit.
      */
     public function test_free_text_feedback_is_truncated_to_configured_limit(): void {
@@ -229,5 +269,193 @@ final class save_rating_test extends \externallib_advanced_testcase {
             \core_text::strlen($record->feedback),
             'Free-text feedback must be truncated to the configured limit.'
         );
+    }
+
+    /**
+     * Configured limits outside 1..2000 and their effective truncation length.
+     *
+     * @return array[]
+     */
+    public static function maxcommentlength_bounds_provider(): array {
+        return [
+            'zero falls back to default'     => ['configured' => 0, 'expected' => 200],
+            'negative falls back to default' => ['configured' => -5, 'expected' => 200],
+            'huge value is capped at 2000'   => ['configured' => 999999, 'expected' => 2000],
+        ];
+    }
+
+    /**
+     * Verify that the effective comment limit is bounded regardless of the stored setting.
+     *
+     * @dataProvider maxcommentlength_bounds_provider
+     * @param int $configured Value stored in the maxcommentlength setting.
+     * @param int $expected Effective truncation length.
+     */
+    public function test_maxcommentlength_setting_is_clamped(int $configured, int $expected): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+        set_config('maxcommentlength', $configured, 'local_datacurso_ratings');
+
+        $this->setUser($student);
+        \local_datacurso_ratings\external\save_rating::execute($quiz->cmid, 1, str_repeat('a', 2500));
+
+        $record = $DB->get_record('local_datacurso_ratings', ['cmid' => $quiz->cmid, 'userid' => $student->id]);
+        $this->assertNotFalse($record);
+        $this->assertSame($expected, \core_text::strlen($record->feedback));
+    }
+
+    /**
+     * Call save_rating expecting a moodle_exception carrying the given error code.
+     *
+     * @param int $cmid Course module id to rate.
+     * @param string $errorcode Expected moodle_exception::errorcode.
+     */
+    private function assert_execute_fails_with_errorcode(int $cmid, string $errorcode): void {
+        try {
+            \local_datacurso_ratings\external\save_rating::execute($cmid, 1, 'Feedback');
+            $this->fail("Expected moodle_exception with errorcode '{$errorcode}'.");
+        } catch (\moodle_exception $e) {
+            $this->assertSame($errorcode, $e->errorcode);
+        }
+    }
+
+    /**
+     * Verify that a guest user cannot save a rating even when the course allows guest access.
+     */
+    public function test_guest_user_cannot_rate_even_with_guest_access_enabled(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+
+        // Enable guest access so require_login() lets the guest into the course.
+        $guest    = enrol_get_plugin('guest');
+        $instance = $DB->get_record('enrol', ['courseid' => $course->id, 'enrol' => 'guest']);
+        if (!$instance) {
+            $instanceid = $guest->add_default_instance($course);
+            $instance   = $DB->get_record('enrol', ['id' => $instanceid], '*', MUST_EXIST);
+        }
+        $guest->update_status($instance, ENROL_INSTANCE_ENABLED);
+
+        $this->setGuestUser();
+
+        $this->expectException(\require_login_exception::class);
+        \local_datacurso_ratings\external\save_rating::execute($quiz->cmid, 1);
+    }
+
+    /**
+     * Verify that a logged-in user who is not enrolled in the course cannot save a rating.
+     */
+    public function test_user_not_enrolled_cannot_rate(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+        $outsider = $this->getDataGenerator()->create_user();
+        $this->setUser($outsider);
+
+        try {
+            \local_datacurso_ratings\external\save_rating::execute($quiz->cmid, 1);
+            $this->fail('Expected require_login_exception for a user who is not enrolled.');
+        } catch (\require_login_exception $e) {
+            $this->assertFalse(
+                $DB->record_exists('local_datacurso_ratings', ['cmid' => $quiz->cmid, 'userid' => $outsider->id]),
+                'No rating must be stored for a user who is not enrolled.'
+            );
+        }
+    }
+
+    /**
+     * Verify that ratings are rejected server side when the plugin is globally disabled.
+     */
+    public function test_rating_rejected_when_plugin_globally_disabled(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+        set_config('enabled', 0, 'local_datacurso_ratings');
+        $this->setUser($student);
+
+        $this->assert_execute_fails_with_errorcode($quiz->cmid, 'ratingsdisabled');
+        $this->assertFalse(
+            $DB->record_exists('local_datacurso_ratings', ['cmid' => $quiz->cmid, 'userid' => $student->id]),
+            'No rating must be stored while the plugin is globally disabled.'
+        );
+    }
+
+    /**
+     * Verify that ratings are rejected server side when the plugin is disabled for the course.
+     */
+    public function test_rating_rejected_when_course_disabled(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+        local_datacurso_ratings_set_course_enabled($course->id, false);
+        $this->setUser($student);
+
+        $this->assert_execute_fails_with_errorcode($quiz->cmid, 'ratingsdisabled');
+        $this->assertFalse(
+            $DB->record_exists('local_datacurso_ratings', ['cmid' => $quiz->cmid, 'userid' => $student->id]),
+            'No rating must be stored while the plugin is disabled for the course.'
+        );
+    }
+
+    /**
+     * Verify that ratings are rejected for module types outside the supported list.
+     */
+    public function test_rating_rejected_for_unsupported_module_type(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+        $label = $this->getDataGenerator()->create_module('label', ['course' => $course->id]);
+        $this->setUser($student);
+
+        $this->assert_execute_fails_with_errorcode($label->cmid, 'unsupportedmodule');
+        $this->assertFalse(
+            $DB->record_exists('local_datacurso_ratings', ['cmid' => $label->cmid, 'userid' => $student->id]),
+            'No rating must be stored for an unsupported module type.'
+        );
+    }
+
+    /**
+     * Verify that an enrolled user whose role lacks local/datacurso_ratings:rate cannot save a rating.
+     */
+    public function test_rating_rejected_without_rate_capability(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+
+        $studentroleid = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        $context       = \context_module::instance($quiz->cmid);
+        assign_capability('local/datacurso_ratings:rate', CAP_PROHIBIT, $studentroleid, $context->id, true);
+        accesslib_clear_all_caches_for_unit_testing();
+
+        $this->setUser($student);
+
+        $this->expectException(\required_capability_exception::class);
+        \local_datacurso_ratings\external\save_rating::execute($quiz->cmid, 1);
+    }
+
+    /**
+     * Verify that HTML tags in the feedback are stripped before the rating is stored.
+     */
+    public function test_html_tags_are_stripped_from_feedback(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
+        $this->setUser($student);
+
+        \local_datacurso_ratings\external\save_rating::execute($quiz->cmid, 1, '<script>alert(1)</script>Great');
+
+        $record = $DB->get_record('local_datacurso_ratings', ['cmid' => $quiz->cmid, 'userid' => $student->id]);
+        $this->assertNotFalse($record);
+        $this->assertStringNotContainsString('<script', $record->feedback);
+        $this->assertSame('alert(1)Great', $record->feedback);
     }
 }

@@ -23,6 +23,10 @@ use core_external\external_single_structure;
 use context_module;
 use invalid_parameter_exception;
 
+defined('MOODLE_INTERNAL') || die();
+
+require_once(__DIR__ . '/../../courselib.php');
+
 /**
  * External function to save a rating for a course module.
  *
@@ -41,7 +45,7 @@ class save_rating extends external_api {
         return new external_function_parameters([
             'cmid' => new external_value(PARAM_INT, 'Course module id'),
             'rating' => new external_value(PARAM_INT, 'Rating: 1 = like, 0 = dislike'),
-            'feedback' => new external_value(PARAM_RAW, 'Optional feedback for negative rating', VALUE_DEFAULT, ''),
+            'feedback' => new external_value(PARAM_TEXT, 'Optional feedback for negative rating', VALUE_DEFAULT, ''),
         ]);
     }
 
@@ -52,6 +56,9 @@ class save_rating extends external_api {
      * @param int $rating Rating value (0 or 1)
      * @param string $feedback Optional feedback
      * @return array Status of the operation
+     * @throws \require_login_exception If the current user is a guest or cannot access the module
+     * @throws \required_capability_exception If the user lacks local/datacurso_ratings:rate
+     * @throws \moodle_exception If ratings are disabled or the module type is not supported
      * @throws invalid_parameter_exception If rating value is invalid
      */
     public static function execute(int $cmid, int $rating, string $feedback = ''): array {
@@ -68,6 +75,20 @@ class save_rating extends external_api {
         $cm = get_coursemodule_from_id(null, $params['cmid'], 0, false, MUST_EXIST);
         $context = context_module::instance($cm->id);
         self::validate_context($context);
+
+        // Guests may reach the module page but must never persist ratings.
+        if (isguestuser()) {
+            throw new \require_login_exception('Guests cannot rate');
+        }
+        require_capability('local/datacurso_ratings:rate', $context);
+
+        // Enforce the global and course-level switches server side, not only in the widget.
+        if (!local_datacurso_ratings_is_enabled_for_course((int)$cm->course)) {
+            throw new \moodle_exception('ratingsdisabled', 'local_datacurso_ratings');
+        }
+        if (!local_datacurso_ratings_is_module_supported($cm->modname)) {
+            throw new \moodle_exception('unsupportedmodule', 'local_datacurso_ratings');
+        }
 
         $r = (int)$params['rating'];
         if ($r !== 0 && $r !== 1) {
@@ -90,11 +111,7 @@ class save_rating extends external_api {
         // The comment limit only governs free-text student input: predefined admin
         // phrases have their own length validation and must be stored in full.
         if ($feedback !== '' && !self::is_predefined_phrase($feedback)) {
-            $feedback = \core_text::substr(
-                $feedback,
-                0,
-                (int) get_config('local_datacurso_ratings', 'maxcommentlength') ?: 200
-            );
+            $feedback = \core_text::substr($feedback, 0, local_datacurso_ratings_get_max_comment_length());
         }
 
         $data = (object)[
