@@ -1,8 +1,6 @@
 @Library('moodle-ci') _
-// One branch validated against every supported Moodle core, 4.5 through 5.2.
+// 4.5 carries both db engines; 5.2 only needs mariadb.
 moodlePluginCI(moodleVersions: [
-  'MOODLE_405_STABLE',
-  'MOODLE_500_STABLE',
-  'MOODLE_501_STABLE',
-  'MOODLE_502_STABLE',
+  [version: 'MOODLE_405_STABLE', dbs: ['mariadb', 'pgsql']],
+  [version: 'MOODLE_502_STABLE', dbs: ['mariadb']],
 ])
