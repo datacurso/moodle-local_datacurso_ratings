@@ -1,0 +1,8 @@
+@Library('moodle-ci') _
+// One branch validated against every supported Moodle core, 4.5 through 5.2.
+moodlePluginCI(moodleVersions: [
+  'MOODLE_405_STABLE',
+  'MOODLE_500_STABLE',
+  'MOODLE_501_STABLE',
+  'MOODLE_502_STABLE',
+])
