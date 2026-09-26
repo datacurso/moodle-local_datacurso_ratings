@@ -47,7 +47,8 @@ final class templates_test extends \advanced_testcase {
 
         $this->assertStringContainsString('&lt;script&gt;', $html);
         $this->assertStringNotContainsString('<script>', $html);
-        $this->assertStringNotContainsString('`', $html);
+        // Backtick written as chr(96): moodle-cs forbids literal backticks in strings.
+        $this->assertStringNotContainsString(chr(96), $html);
     }
 
     /**
