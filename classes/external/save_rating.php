@@ -45,7 +45,12 @@ class save_rating extends external_api {
         return new external_function_parameters([
             'cmid' => new external_value(PARAM_INT, 'Course module id'),
             'rating' => new external_value(PARAM_INT, 'Rating: 1 = like, 0 = dislike'),
-            'feedback' => new external_value(PARAM_TEXT, 'Optional feedback for negative rating', VALUE_DEFAULT, ''),
+            'feedback' => new external_value(
+                PARAM_RAW,
+                'Optional feedback text (HTML is stripped server side)',
+                VALUE_DEFAULT,
+                ''
+            ),
         ]);
     }
 
@@ -54,7 +59,7 @@ class save_rating extends external_api {
      *
      * @param int $cmid Course module id
      * @param int $rating Rating value (0 or 1)
-     * @param string $feedback Optional feedback
+     * @param string $feedback Optional feedback (HTML tags are stripped server side)
      * @return array Status of the operation
      * @throws \require_login_exception If the current user is a guest or cannot access the module
      * @throws \required_capability_exception If the user lacks local/datacurso_ratings:rate
@@ -106,7 +111,10 @@ class save_rating extends external_api {
             ['cmid' => $cm->id, 'userid' => $USER->id]
         );
 
+        // The parameter is declared PARAM_RAW because validate_parameters() rejects values
+        // that change after cleaning; HTML is stripped here instead so plain text is stored.
         $feedback = trim((string)$params['feedback']);
+        $feedback = trim(clean_param($feedback, PARAM_TEXT));
 
         // The comment limit only governs free-text student input: predefined admin
         // phrases have their own length validation and must be stored in full.

@@ -217,7 +217,7 @@ final class save_rating_test extends \externallib_advanced_testcase {
      * and is therefore exempt from the free-text limit.
      */
     public function test_predefined_phrase_with_special_characters_round_trips_unescaped(): void {
-        global $DB, $OUTPUT;
+        global $DB, $PAGE;
         $this->resetAfterTest(true);
 
         [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
@@ -233,8 +233,10 @@ final class save_rating_test extends \externallib_advanced_testcase {
             'timemodified' => $now,
         ]);
 
+        // $OUTPUT is a bootstrap_renderer under PHPUnit, so fetch a real core renderer.
+        $renderer = $PAGE->get_renderer('core');
         $page = new \local_datacurso_ratings\output\feedback_page('like');
-        $data = $page->export_for_template($OUTPUT);
+        $data = $page->export_for_template($renderer);
         $this->assertCount(1, $data['items']);
         $this->assertSame($phrase, $data['items'][0]['feedbacktext']);
         $this->assertArrayNotHasKey('sesskey', $data);

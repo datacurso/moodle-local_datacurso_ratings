@@ -188,13 +188,14 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
         provider::get_users_in_context($userlist);
         $userids = $userlist->get_userids();
         sort($userids);
-        $expected = [$student1->id, $student2->id];
+        // The generator returns ids as strings on MariaDB, so cast before a strict comparison.
+        $expected = [(int)$student1->id, (int)$student2->id];
         sort($expected);
         $this->assertSame($expected, array_map('intval', $userids));
 
         $userlist = new userlist(\context_module::instance($forum->cmid), 'local_datacurso_ratings');
         provider::get_users_in_context($userlist);
-        $this->assertSame([$student1->id], array_map('intval', $userlist->get_userids()));
+        $this->assertSame([(int)$student1->id], array_map('intval', $userlist->get_userids()));
 
         $userlist = new userlist(\context_course::instance($course->id), 'local_datacurso_ratings');
         provider::get_users_in_context($userlist);

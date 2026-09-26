@@ -54,7 +54,9 @@ final class update_recommendations_cache_test extends \externallib_advanced_test
         $cache = \cache::make('local_datacurso_ratings', 'recommendations');
         $cache->purge();
 
-        // Execute the task.
+        // Execute the task. It reports progress via mtrace, so declare the expected output
+        // to avoid a risky-test warning.
+        $this->expectOutputRegex('/Finished updating cache/');
         $task = new \local_datacurso_ratings\task\update_recommendations_cache();
         $task->execute();
 
@@ -84,6 +86,7 @@ final class update_recommendations_cache_test extends \externallib_advanced_test
         $cache = \cache::make('local_datacurso_ratings', 'recommendations');
         $cache->purge();
 
+        $this->expectOutputRegex('/Finished updating cache/');
         $task = new \local_datacurso_ratings\task\update_recommendations_cache();
         $task->execute();
 
@@ -133,6 +136,7 @@ final class update_recommendations_cache_test extends \externallib_advanced_test
         $cache = \cache::make('local_datacurso_ratings', 'recommendations');
         $cache->purge();
 
+        $this->expectOutputRegex('/Finished updating cache/');
         $task = new \local_datacurso_ratings\task\update_recommendations_cache();
         $task->execute();
 
@@ -159,6 +163,7 @@ final class update_recommendations_cache_test extends \externallib_advanced_test
         $cache = \cache::make('local_datacurso_ratings', 'recommendations');
         $cache->purge();
 
+        $this->expectOutputRegex('/Finished updating cache/');
         $task = new \local_datacurso_ratings\task\update_recommendations_cache();
         $task->execute();
 

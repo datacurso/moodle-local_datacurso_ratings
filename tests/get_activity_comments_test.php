@@ -166,22 +166,22 @@ final class get_activity_comments_test extends \externallib_advanced_testcase {
         role_assign($role, $caller->id, \context_module::instance($quiz->cmid));
         $this->setUser($caller);
 
-        // Insert 5 comments but request only 2 per page.
-        for ($i = 1; $i <= 5; $i++) {
+        // Insert 7 comments but request only 5 per page (the smallest allowed page size).
+        for ($i = 1; $i <= 7; $i++) {
             $u = $gen->create_user();
             $this->insert_rating($quiz->cmid, $u->id, 1, "comment number $i with enough text");
         }
 
-        $result = get_activity_comments::execute($quiz->cmid, 0, 2, '');
+        $result = get_activity_comments::execute($quiz->cmid, 0, 5, '');
         $pagination = $result['pagination'];
 
-        $this->assertEquals(5, $pagination['total']);
+        $this->assertEquals(7, $pagination['total']);
         $this->assertTrue((bool)$pagination['hasmore']);
         $this->assertGreaterThan(1, $pagination['totalpages']);
 
         // Last page should NOT have more.
         $lastpage = $pagination['totalpages'] - 1;
-        $resultlast = get_activity_comments::execute($quiz->cmid, $lastpage, 2, '');
+        $resultlast = get_activity_comments::execute($quiz->cmid, $lastpage, 5, '');
         $this->assertFalse((bool)$resultlast['pagination']['hasmore']);
     }
 
