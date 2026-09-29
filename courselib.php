@@ -93,3 +93,62 @@ function local_datacurso_ratings_get_course_enabled(int $courseid): ?bool {
 
     return (bool)$record->enabled;
 }
+
+/**
+ * Get the list of module types that support activity ratings.
+ *
+ * @return string[] Module names (mod plugin short names).
+ */
+function local_datacurso_ratings_get_supported_modules(): array {
+    return [
+        'resource',
+        'folder',
+        'page',
+        'url',
+        'imscp',
+        'book',
+        'assign',
+        'chat',
+        'choice',
+        'data',
+        'feedback',
+        'forum',
+        'glossary',
+        'lesson',
+        'quiz',
+        'scorm',
+        'survey',
+        'wiki',
+        'workshop',
+        'lti',
+        'h5pactivity',
+        'hvp',
+    ];
+}
+
+/**
+ * Check whether the given module type supports activity ratings.
+ *
+ * @param string $modname The module name (for example 'quiz').
+ * @return bool True if ratings can be collected for this module type.
+ */
+function local_datacurso_ratings_is_module_supported(string $modname): bool {
+    return in_array($modname, local_datacurso_ratings_get_supported_modules(), true);
+}
+
+/**
+ * Get the effective maximum length for free-text student comments.
+ *
+ * The admin setting is a plain integer, so the value is bounded here: anything
+ * below 1 falls back to the default and anything above 2000 is capped, keeping
+ * the server-side truncation and the widget maxlength attribute in sync.
+ *
+ * @return int Effective limit, always within 1..2000.
+ */
+function local_datacurso_ratings_get_max_comment_length(): int {
+    $configured = (int) get_config('local_datacurso_ratings', 'maxcommentlength');
+    if ($configured < 1) {
+        $configured = 200;
+    }
+    return min(2000, $configured);
+}

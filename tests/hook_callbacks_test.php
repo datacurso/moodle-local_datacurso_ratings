@@ -384,4 +384,36 @@ final class hook_callbacks_test extends \advanced_testcase {
         $exists = $DB->record_exists('local_datacurso_ratings_course_settings', ['courseid' => $course->id]);
         $this->assertFalse($exists, 'No course config must be saved when the plugin is globally disabled.');
     }
+
+    /**
+     * Verify that the widget is NOT injected for an enrolled student whose role
+     * has local/datacurso_ratings:rate prohibited in the module context.
+     */
+    public function test_widget_absent_without_rate_capability(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        set_config('enabled', 1, 'local_datacurso_ratings');
+
+        $course  = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($student->id, $course->id);
+
+        $page = $this->getDataGenerator()->create_module('page', ['course' => $course->id]);
+        $cm   = get_coursemodule_from_instance('page', $page->id, $course->id);
+
+        $studentroleid = $DB->get_field('role', 'id', ['shortname' => 'student'], MUST_EXIST);
+        $context       = \context_module::instance($cm->id);
+        assign_capability('local/datacurso_ratings:rate', CAP_PROHIBIT, $studentroleid, $context->id, true);
+        accesslib_clear_all_caches_for_unit_testing();
+
+        $this->setUser($student);
+        $this->set_up_module_page($course, $cm);
+
+        global $PAGE;
+        $hook = new \core\hook\output\before_footer_html_generation($PAGE->get_renderer('core'));
+        \local_datacurso_ratings\hook_callbacks::before_footer_html_generation($hook);
+
+        $this->assertEmpty($hook->get_output(), 'Widget must NOT be injected without the rate capability.');
+    }
 }

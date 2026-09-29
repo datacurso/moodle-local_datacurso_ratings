@@ -166,22 +166,22 @@ final class get_activity_comments_test extends \externallib_advanced_testcase {
         role_assign($role, $caller->id, \context_module::instance($quiz->cmid));
         $this->setUser($caller);
 
-        // Insert 5 comments but request only 2 per page.
-        for ($i = 1; $i <= 5; $i++) {
+        // Insert 7 comments but request only 5 per page (the smallest allowed page size).
+        for ($i = 1; $i <= 7; $i++) {
             $u = $gen->create_user();
             $this->insert_rating($quiz->cmid, $u->id, 1, "comment number $i with enough text");
         }
 
-        $result = get_activity_comments::execute($quiz->cmid, 0, 2, '');
+        $result = get_activity_comments::execute($quiz->cmid, 0, 5, '');
         $pagination = $result['pagination'];
 
-        $this->assertEquals(5, $pagination['total']);
+        $this->assertEquals(7, $pagination['total']);
         $this->assertTrue((bool)$pagination['hasmore']);
         $this->assertGreaterThan(1, $pagination['totalpages']);
 
         // Last page should NOT have more.
         $lastpage = $pagination['totalpages'] - 1;
-        $resultlast = get_activity_comments::execute($quiz->cmid, $lastpage, 2, '');
+        $resultlast = get_activity_comments::execute($quiz->cmid, $lastpage, 5, '');
         $this->assertFalse((bool)$resultlast['pagination']['hasmore']);
     }
 
@@ -221,5 +221,108 @@ final class get_activity_comments_test extends \externallib_advanced_testcase {
 
         $this->assertCount(1, $comments);
         $this->assertStringContainsStringIgnoringCase('excellent', $comments[0]['feedback']);
+    }
+
+    /**
+     * Create a quiz with three comments and set a caller allowed to view the course report.
+     *
+     * @return int The quiz course module id.
+     */
+    private function create_quiz_with_comments_and_caller(): int {
+        $gen = $this->getDataGenerator();
+        $course = $gen->create_course();
+        $quiz   = $gen->create_module('quiz', ['course' => $course->id]);
+        $context = \context_module::instance($quiz->cmid);
+
+        $role = $gen->create_role();
+        assign_capability('local/datacurso_ratings:viewcoursereport', CAP_ALLOW, $role, $context);
+        $caller = $gen->create_user();
+        $gen->enrol_user($caller->id, $course->id);
+        role_assign($role, $caller->id, $context);
+        $this->setUser($caller);
+
+        for ($i = 1; $i <= 3; $i++) {
+            $u = $gen->create_user();
+            $this->insert_rating($quiz->cmid, $u->id, 1, "comment number $i with enough text");
+        }
+
+        return (int)$quiz->cmid;
+    }
+
+    /**
+     * Pagination inputs outside the allowed range must be clamped instead of failing.
+     *
+     * @return array[]
+     */
+    public static function pagination_bounds_provider(): array {
+        return [
+            'perpage zero'      => ['page' => 0, 'perpage' => 0],
+            'perpage negative'  => ['page' => 0, 'perpage' => -5],
+            'perpage too large' => ['page' => 0, 'perpage' => 999],
+            'page negative'     => ['page' => -1, 'perpage' => 20],
+        ];
+    }
+
+    /**
+     * Out-of-range page/perpage values succeed and are clamped to an allowed value.
+     *
+     * @dataProvider pagination_bounds_provider
+     * @param int $page Requested page.
+     * @param int $perpage Requested page size.
+     */
+    public function test_out_of_range_pagination_is_clamped(int $page, int $perpage): void {
+        $this->resetAfterTest(true);
+
+        $cmid = $this->create_quiz_with_comments_and_caller();
+
+        $result = get_activity_comments::execute($cmid, $page, $perpage, '');
+        $pagination = $result['pagination'];
+
+        $this->assertContains((int)$pagination['perpage'], get_activity_comments::ALLOWED_PAGE_SIZES);
+        $this->assertGreaterThanOrEqual(0, (int)$pagination['page']);
+        $this->assertGreaterThanOrEqual(1, (int)$pagination['totalpages']);
+        $this->assertEquals(3, $pagination['total']);
+        $this->assertCount(3, $result['comments']);
+    }
+
+    /**
+     * An allowed page size is kept as requested.
+     */
+    public function test_allowed_page_size_is_preserved(): void {
+        $this->resetAfterTest(true);
+
+        $cmid = $this->create_quiz_with_comments_and_caller();
+
+        $result = get_activity_comments::execute($cmid, 0, 5, '');
+
+        $this->assertEquals(5, $result['pagination']['perpage']);
+        $this->assertEquals(1, $result['pagination']['totalpages']);
+    }
+
+    /**
+     * With no comments and perpage=0 the call must not divide by zero; the pager stays hidden
+     * (totalpages = 0) exactly as it does for a valid page size.
+     */
+    public function test_zero_perpage_without_comments_does_not_divide_by_zero(): void {
+        $this->resetAfterTest(true);
+
+        $gen = $this->getDataGenerator();
+        $course = $gen->create_course();
+        $quiz   = $gen->create_module('quiz', ['course' => $course->id]);
+        $context = \context_module::instance($quiz->cmid);
+
+        $role = $gen->create_role();
+        assign_capability('local/datacurso_ratings:viewcoursereport', CAP_ALLOW, $role, $context);
+        $caller = $gen->create_user();
+        $gen->enrol_user($caller->id, $course->id);
+        role_assign($role, $caller->id, $context);
+        $this->setUser($caller);
+
+        $result = get_activity_comments::execute($quiz->cmid, 0, 0, '');
+
+        $this->assertEquals(0, $result['pagination']['total']);
+        $this->assertEquals(get_activity_comments::DEFAULT_PAGE_SIZE, $result['pagination']['perpage']);
+        $this->assertEquals(0, $result['pagination']['totalpages']);
+        $this->assertFalse((bool)$result['pagination']['hasmore']);
     }
 }

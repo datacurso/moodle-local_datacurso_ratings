@@ -25,6 +25,7 @@ import Ajax from 'core/ajax';
 import Templates from 'core/templates';
 import Notification from 'core/notification';
 import {getStrings} from 'core/str';
+import {toCsvRow} from 'local_datacurso_ratings/csv_utils';
 
 /** @type {Array} */
 let cachedActivities = [];
@@ -165,6 +166,14 @@ function initTableFeatures() {
         exportCsvButton.addEventListener('click', exportToCSV);
     }
 
+    const reloadButton = document.querySelector('[data-action="course-report-reload"]');
+    if (reloadButton) {
+        reloadButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            window.location.reload();
+        });
+    }
+
     document.querySelectorAll('.expand-comments').forEach((button) => {
         button.addEventListener('click', async(e) => {
             const toggleButton = e.currentTarget;
@@ -230,8 +239,8 @@ async function exportToCSV() {
     ]);
 
     const csvcontent = [
-        headers.join(','),
-        ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',')),
+        toCsvRow(headers),
+        ...rows.map(toCsvRow),
     ].join('\n');
 
     const blob = new Blob(['\ufeff' + csvcontent], {type: 'text/csv;charset=utf-8;'});

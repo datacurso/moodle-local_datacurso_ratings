@@ -36,6 +36,8 @@ require_once($CFG->dirroot . '/local/datacurso_ratings/courselib.php');
  * @covers ::local_datacurso_ratings_is_enabled_for_course
  * @covers ::local_datacurso_ratings_set_course_enabled
  * @covers ::local_datacurso_ratings_get_course_enabled
+ * @covers ::local_datacurso_ratings_get_supported_modules
+ * @covers ::local_datacurso_ratings_is_module_supported
  */
 final class courselib_test extends \advanced_testcase {
     /**
@@ -129,5 +131,66 @@ final class courselib_test extends \advanced_testcase {
         $result = local_datacurso_ratings_get_course_enabled($course->id);
 
         $this->assertNull($result, 'Expected null when no course-level config record exists.');
+    }
+
+    /**
+     * Verify that the supported module list contains the core activity types the widget
+     * renders on and excludes structural modules such as labels.
+     */
+    public function test_supported_modules_lists_core_activity_types(): void {
+        $modules = local_datacurso_ratings_get_supported_modules();
+
+        $this->assertContains('quiz', $modules);
+        $this->assertContains('page', $modules);
+        $this->assertContains('forum', $modules);
+        $this->assertNotContains('label', $modules);
+        $this->assertNotContains('subsection', $modules);
+        $this->assertSame($modules, array_values(array_unique($modules)), 'Module list must have no duplicates.');
+    }
+
+    /**
+     * Verify the module support predicate for supported, unsupported and empty names.
+     */
+    public function test_is_module_supported_matches_supported_list(): void {
+        $this->assertTrue(local_datacurso_ratings_is_module_supported('quiz'));
+        $this->assertTrue(local_datacurso_ratings_is_module_supported('h5pactivity'));
+        $this->assertFalse(local_datacurso_ratings_is_module_supported('label'));
+        $this->assertFalse(local_datacurso_ratings_is_module_supported(''));
+    }
+
+    /**
+     * Stored setting values and the effective comment length they resolve to.
+     *
+     * @return array[]
+     */
+    public static function max_comment_length_provider(): array {
+        return [
+            'unset uses default'       => ['configured' => null, 'expected' => 200],
+            'zero uses default'        => ['configured' => 0, 'expected' => 200],
+            'negative uses default'    => ['configured' => -5, 'expected' => 200],
+            'lower bound is kept'      => ['configured' => 1, 'expected' => 1],
+            'in range is kept'         => ['configured' => 350, 'expected' => 350],
+            'upper bound is kept'      => ['configured' => 2000, 'expected' => 2000],
+            'above upper bound capped' => ['configured' => 999999, 'expected' => 2000],
+        ];
+    }
+
+    /**
+     * Verify that the effective comment length is always within 1..2000.
+     *
+     * @dataProvider max_comment_length_provider
+     * @param int|null $configured Value to store in the setting (null leaves it unset).
+     * @param int $expected Effective limit.
+     */
+    public function test_get_max_comment_length_is_bounded(?int $configured, int $expected): void {
+        $this->resetAfterTest(true);
+
+        if ($configured !== null) {
+            set_config('maxcommentlength', $configured, 'local_datacurso_ratings');
+        } else {
+            unset_config('maxcommentlength', 'local_datacurso_ratings');
+        }
+
+        $this->assertSame($expected, local_datacurso_ratings_get_max_comment_length());
     }
 }

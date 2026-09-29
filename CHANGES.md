@@ -2,6 +2,35 @@
 
 All notable changes to this plugin will be documented in this file.
 
+## [1.1.0]
+
+### Security
+- Privacy API provider rewritten to use the module context, with userlist support and the Datacurso AI service declared as an external location.
+- Event observers delete ratings when a course or course module is deleted.
+- New `local/datacurso_ratings:rate` capability; `save_rating` now rejects guests, disabled courses and unsupported module types server side, and cleans feedback as `PARAM_TEXT`.
+- Capability context levels corrected and two unused capabilities removed.
+- AI analysis error message is escaped in the template instead of being rendered as raw HTML.
+- CSV exports neutralise formula injection (`=`, `+`, `-`, `@`, tab, carriage return) via a shared `csv_utils` AMD helper.
+- `get_activity_comments` clamps `perpage` to an allowed page size and `page` to a non-negative value (no division by zero on `perpage=0`).
+- Inline `onclick` handlers removed from the report templates in favour of `data-action` listeners.
+- `maxcommentlength` is bounded to 1..2000 (falls back to 200) through `local_datacurso_ratings_get_max_comment_length()`.
+
+### Fixed
+- Predefined feedback phrases are no longer double-escaped, so phrases containing `&` or `"` match the stored phrase and are exempt from the free-text limit.
+- Stray backtick removed from the AI analysis response template.
+
+### Changed
+- `update_recommendations_cache` streams user ids with a recordset and computes the global like ratio once per run; `service::get_recommendations_for_user()` accepts an optional precomputed ratio.
+- Version bumped to 2026092401.
+
+## [1.0.7]
+
+### Added
+- Feedback length validation distinguishes free-text comments from predefined phrases: the `maxcommentlength` limit truncates free text only, while admin phrases are stored in full.
+
+### Changed
+- Release metadata updates.
+
 ## [1.0.6]
 
 ### Added

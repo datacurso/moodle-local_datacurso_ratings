@@ -276,4 +276,82 @@ final class recommendations_test extends \externallib_advanced_testcase {
             $prev = (float)$r['score'];
         }
     }
+
+    /**
+     * The global like ratio is 0.5 without any rating and likes / total otherwise.
+     */
+    public function test_get_global_ratio_reflects_all_ratings(): void {
+        $this->resetAfterTest(true);
+
+        $this->assertSame(0.5, \local_datacurso_ratings\recommendations\service::get_global_ratio());
+
+        $category = $this->getDataGenerator()->create_category();
+        $course   = $this->getDataGenerator()->create_course(['category' => $category->id, 'visible' => 1]);
+
+        // 3 likes and 1 dislike from distinct raters, each on a distinct page.
+        foreach ([1, 1, 1, 0] as $rating) {
+            $rater = $this->getDataGenerator()->create_user();
+            $page  = $this->getDataGenerator()->create_module('page', ['course' => $course->id]);
+            $this->insert_rating($rater->id, $page->cmid, $course->id, $category->id, $rating);
+        }
+
+        $this->assertSame(0.75, \local_datacurso_ratings\recommendations\service::get_global_ratio());
+    }
+
+    /**
+     * Passing a precomputed global ratio yields exactly the same recommendations as letting
+     * the service compute it, so callers processing many users can compute it once.
+     */
+    public function test_precomputed_global_ratio_gives_same_results(): void {
+        $this->resetAfterTest(true);
+
+        $category = $this->getDataGenerator()->create_category();
+        $user     = $this->getDataGenerator()->create_user();
+
+        $ratedcourse = $this->getDataGenerator()->create_course(['category' => $category->id, 'visible' => 1]);
+        for ($i = 0; $i < 5; $i++) {
+            $rater = $this->getDataGenerator()->create_user();
+            $page  = $this->getDataGenerator()->create_module('page', ['course' => $ratedcourse->id]);
+            $this->insert_rating($rater->id, $page->cmid, $ratedcourse->id, $category->id, 1);
+        }
+        $this->getDataGenerator()->create_course(['category' => $category->id, 'visible' => 1]);
+
+        $cache = \cache::make('local_datacurso_ratings', 'recommendations');
+        $cache->purge();
+
+        $computed = \local_datacurso_ratings\recommendations\service::get_recommendations_for_user($user->id, 10);
+        $globalratio = \local_datacurso_ratings\recommendations\service::get_global_ratio();
+        $precomputed = \local_datacurso_ratings\recommendations\service::get_recommendations_for_user(
+            $user->id,
+            10,
+            $globalratio
+        );
+
+        $this->assertNotEmpty($computed);
+        $this->assertSame($computed, $precomputed);
+    }
+
+    /**
+     * An explicit global ratio overrides the database-derived one (it is the value actually used).
+     */
+    public function test_explicit_global_ratio_is_used_as_category_fallback(): void {
+        $this->resetAfterTest(true);
+
+        $category = $this->getDataGenerator()->create_category();
+        $user     = $this->getDataGenerator()->create_user();
+        $target   = $this->getDataGenerator()->create_course(['category' => $category->id, 'visible' => 1]);
+
+        $cache = \cache::make('local_datacurso_ratings', 'recommendations');
+        $cache->purge();
+
+        // No rating at all: the DB ratio would be 0.5 (50%), below the 80% filter.
+        $default = \local_datacurso_ratings\recommendations\service::get_recommendations_for_user($user->id, 10);
+        $this->assertEmpty($default);
+
+        // Forcing a 100% ratio makes the course pass the filter with category_preference_pct = 100.
+        $forced = \local_datacurso_ratings\recommendations\service::get_recommendations_for_user($user->id, 10, 1.0);
+        $this->assertCount(1, $forced);
+        $this->assertSame((int)$target->id, (int)$forced[0]['courseid']);
+        $this->assertEquals(100.0, $forced[0]['category_preference_pct']);
+    }
 }

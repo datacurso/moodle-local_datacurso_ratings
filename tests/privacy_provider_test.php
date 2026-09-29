@@ -25,44 +25,54 @@
 
 namespace local_datacurso_ratings;
 
+use core_privacy\local\metadata\collection;
+use core_privacy\local\metadata\types\database_table;
+use core_privacy\local\metadata\types\external_location;
+use core_privacy\local\request\approved_contextlist;
+use core_privacy\local\request\approved_userlist;
+use core_privacy\local\request\transform;
+use core_privacy\local\request\userlist;
+use core_privacy\local\request\writer;
+use local_datacurso_ratings\privacy\provider;
+
 /**
- * Tests for GDPR compliance — export, selective delete, and mass delete (INT-015).
+ * Tests for GDPR compliance: metadata, context discovery, export, and selective deletes (INT-015).
+ *
+ * Every rating belongs to the module context of the rated course module, so all
+ * contextlist, userlist, export and delete operations are scoped to CONTEXT_MODULE.
  *
  * @covers \local_datacurso_ratings\privacy\provider
  */
 final class privacy_provider_test extends \core_privacy\tests\provider_testcase {
     /**
-     * Insert a rating record directly for test setup using a real course module.
-     *
-     * Creates a page module in the given course so that the cmid is a valid
-     * course_modules row, satisfying any FK or UNIQUE(cmid, userid) constraints.
+     * Insert a rating record directly for the given user and course module.
      *
      * @param int $userid
-     * @param int $courseid
-     * @param int $categoryid
-     * @param int $rating
+     * @param \stdClass $module Module record returned by the generator (has cmid and course).
+     * @param int $rating 1 = like, 0 = dislike.
+     * @param string $feedback
+     * @param int $time Timestamp used for timecreated and timemodified.
+     * @return int Rating record id.
      */
-    private function insert_rating(int $userid, int $courseid, int $categoryid, int $rating): void {
+    private function insert_rating(int $userid, \stdClass $module, int $rating, string $feedback, int $time): int {
         global $DB;
-        $now  = time();
-        $page = $this->getDataGenerator()->create_module('page', ['course' => $courseid]);
-        $DB->insert_record('local_datacurso_ratings', (object)[
+        return $DB->insert_record('local_datacurso_ratings', (object)[
             'userid'       => $userid,
-            'cmid'         => $page->cmid,
-            'courseid'     => $courseid,
-            'categoryid'   => $categoryid,
+            'cmid'         => $module->cmid,
+            'courseid'     => $module->course,
+            'categoryid'   => 1,
             'rating'       => $rating,
-            'feedback'     => 'Test feedback',
-            'timecreated'  => $now,
-            'timemodified' => $now,
+            'feedback'     => $feedback,
+            'timecreated'  => $time,
+            'timemodified' => $time,
         ]);
     }
 
     /**
-     * Insert a predefined feedback phrase for test setup.
+     * Insert a predefined feedback phrase (admin configuration, no personal data).
      *
      * @param string $text
-     * @param string $type  'like' or 'dislike'
+     * @param string $type 'like' or 'dislike'.
      */
     private function insert_feedback_phrase(string $text, string $type): void {
         global $DB;
@@ -76,110 +86,284 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
     }
 
     /**
-     * Verify that all ratings for a user are exported correctly (3 ratings = 3 records).
+     * Create a course with a page and a forum activity plus two enrolled students.
      *
-     * Spec: MDL-INT-015 step 1.
+     * @return array{course: \stdClass, page: \stdClass, forum: \stdClass, student1: \stdClass, student2: \stdClass}
      */
-    public function test_export_user_data_returns_all_ratings(): void {
-        global $DB;
-        $this->resetAfterTest(true);
+    private function create_fixture(): array {
+        $generator = $this->getDataGenerator();
+        $course = $generator->create_course();
+        $page = $generator->create_module('page', ['course' => $course->id]);
+        $forum = $generator->create_module('forum', ['course' => $course->id]);
+        $student1 = $generator->create_user();
+        $student2 = $generator->create_user();
+        $generator->enrol_user($student1->id, $course->id, 'student');
+        $generator->enrol_user($student2->id, $course->id, 'student');
 
-        $user   = $this->getDataGenerator()->create_user();
-        $course = $this->getDataGenerator()->create_course();
-
-        // Insert 3 ratings for the user.
-        $this->insert_rating($user->id, $course->id, 1, 1);
-        $this->insert_rating($user->id, $course->id, 1, 0);
-        $this->insert_rating($user->id, $course->id, 2, 1);
-
-        $syscontext = \context_system::instance();
-
-        $contextlist = \local_datacurso_ratings\privacy\provider::get_contexts_for_userid($user->id);
-        $this->assertNotEmpty($contextlist->get_contextids(), 'Context list must not be empty for a user with ratings.');
-
-        // Build an approved context list using the system context.
-        $approvedids = new \core_privacy\local\request\approved_contextlist(
-            $user,
-            'local_datacurso_ratings',
-            [(string)$syscontext->id]
-        );
-        \local_datacurso_ratings\privacy\provider::export_user_data($approvedids);
-
-        // The writer should have received data for this user.
-        $writer = \core_privacy\local\request\writer::with_context($syscontext);
-        $data   = $writer->get_data(['Ratings']);
-
-        $this->assertNotNull($data, 'Exported data object must not be null.');
-        $this->assertCount(3, $data->entries, 'Exported entries must contain exactly 3 ratings.');
+        return [
+            'course' => $course,
+            'page' => $page,
+            'forum' => $forum,
+            'student1' => $student1,
+            'student2' => $student2,
+        ];
     }
 
     /**
-     * Verify that deleting user A's data does not affect user B's ratings.
+     * The subcontext under which ratings are exported.
      *
-     * Spec: MDL-INT-015 step 2.
+     * @return string[]
      */
-    public function test_delete_user_data_does_not_affect_other_users(): void {
-        global $DB;
+    private function subcontext(): array {
+        return [get_string('privacy:subcontext:ratings', 'local_datacurso_ratings')];
+    }
+
+    /**
+     * The metadata collection must describe the ratings table and the external AI service.
+     */
+    public function test_get_metadata_declares_table_and_external_ai_location(): void {
+        $collection = provider::get_metadata(new collection('local_datacurso_ratings'));
+        $items = $collection->get_collection();
+
+        $tables = array_values(array_filter($items, static fn($item) => $item instanceof database_table));
+        $externals = array_values(array_filter($items, static fn($item) => $item instanceof external_location));
+
+        $this->assertCount(1, $tables);
+        $this->assertSame('local_datacurso_ratings', $tables[0]->get_name());
+        $this->assertArrayHasKey('feedback', $tables[0]->get_privacy_fields());
+
+        $this->assertCount(1, $externals, 'The Datacurso AI service must be declared as an external location.');
+        $this->assertSame('datacurso_ai', $externals[0]->get_name());
+        $this->assertSame('privacy:metadata:datacurso_ai', $externals[0]->get_summary());
+        $fields = $externals[0]->get_privacy_fields();
+        foreach (['feedback', 'course', 'activity', 'activity_type', 'approvalpercent', 'userid'] as $field) {
+            $this->assertArrayHasKey($field, $fields);
+            $this->assertSame('privacy:metadata:datacurso_ai:' . $field, $fields[$field]);
+        }
+    }
+
+    /**
+     * The contexts for a user are exactly the module contexts of the course modules the user rated.
+     */
+    public function test_get_contexts_for_userid_returns_only_rated_module_contexts(): void {
         $this->resetAfterTest(true);
+        ['page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] = $this->create_fixture();
+        $nobody = $this->getDataGenerator()->create_user();
+        $now = time();
 
-        $usera  = $this->getDataGenerator()->create_user();
-        $userb  = $this->getDataGenerator()->create_user();
-        $course = $this->getDataGenerator()->create_course();
+        $this->insert_rating($student1->id, $page, 1, 'Page feedback', $now);
+        $this->insert_rating($student1->id, $forum, 0, 'Forum feedback', $now);
+        $this->insert_rating($student2->id, $page, 1, 'Other feedback', $now);
 
-        $this->insert_rating($usera->id, $course->id, 1, 1);
-        $this->insert_rating($userb->id, $course->id, 1, 0);
+        $pagectx = \context_module::instance($page->cmid);
+        $forumctx = \context_module::instance($forum->cmid);
 
-        $syscontext = \context_system::instance();
+        $contextids = provider::get_contexts_for_userid($student1->id)->get_contextids();
+        sort($contextids);
+        $expected = [$pagectx->id, $forumctx->id];
+        sort($expected);
+        $this->assertSame($expected, array_map('intval', $contextids));
+        $this->assertNotContains(\context_system::instance()->id, array_map('intval', $contextids));
 
-        $approvedids = new \core_privacy\local\request\approved_contextlist(
-            $usera,
-            'local_datacurso_ratings',
-            [(string)$syscontext->id]
-        );
-        \local_datacurso_ratings\privacy\provider::delete_data_for_user($approvedids);
+        $contextids = provider::get_contexts_for_userid($student2->id)->get_contextids();
+        $this->assertSame([$pagectx->id], array_map('intval', $contextids));
+
+        $this->assertEmpty(provider::get_contexts_for_userid($nobody->id)->get_contextids());
+    }
+
+    /**
+     * A module context lists only the users who rated that module; other context levels list nobody.
+     */
+    public function test_get_users_in_context_returns_only_raters_of_that_module(): void {
+        $this->resetAfterTest(true);
+        ['course' => $course, 'page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] =
+            $this->create_fixture();
+        $now = time();
+
+        $this->insert_rating($student1->id, $page, 1, 'Page feedback', $now);
+        $this->insert_rating($student2->id, $page, 0, 'Other feedback', $now);
+        $this->insert_rating($student1->id, $forum, 1, 'Forum feedback', $now);
+
+        $userlist = new userlist(\context_module::instance($page->cmid), 'local_datacurso_ratings');
+        provider::get_users_in_context($userlist);
+        $userids = $userlist->get_userids();
+        sort($userids);
+        // The generator returns ids as strings on MariaDB, so cast before a strict comparison.
+        $expected = [(int)$student1->id, (int)$student2->id];
+        sort($expected);
+        $this->assertSame($expected, array_map('intval', $userids));
+
+        $userlist = new userlist(\context_module::instance($forum->cmid), 'local_datacurso_ratings');
+        provider::get_users_in_context($userlist);
+        $this->assertSame([(int)$student1->id], array_map('intval', $userlist->get_userids()));
+
+        $userlist = new userlist(\context_course::instance($course->id), 'local_datacurso_ratings');
+        provider::get_users_in_context($userlist);
+        $this->assertEmpty($userlist->get_userids(), 'A course context must not list raters.');
+
+        $userlist = new userlist(\context_system::instance(), 'local_datacurso_ratings');
+        provider::get_users_in_context($userlist);
+        $this->assertEmpty($userlist->get_userids(), 'The system context must not list raters.');
+    }
+
+    /**
+     * Export writes only the rating of the approved module context, in a human readable form.
+     */
+    public function test_export_user_data_exports_only_approved_module_context(): void {
+        $this->resetAfterTest(true);
+        ['page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] = $this->create_fixture();
+        $created = 1700000000;
+        $modified = 1700003600;
+
+        global $DB;
+        $ratingid = $this->insert_rating($student1->id, $page, 1, 'Loved the page', $created);
+        $DB->set_field('local_datacurso_ratings', 'timemodified', $modified, ['id' => $ratingid]);
+        $this->insert_rating($student1->id, $forum, 0, 'Forum was confusing', $created);
+        $this->insert_rating($student2->id, $page, 0, 'Not for me', $created);
+
+        $pagectx = \context_module::instance($page->cmid);
+        $forumctx = \context_module::instance($forum->cmid);
+
+        $approved = new approved_contextlist($student1, 'local_datacurso_ratings', [$pagectx->id]);
+        provider::export_user_data($approved);
+
+        $data = writer::with_context($pagectx)->get_data($this->subcontext());
+        $this->assertNotEmpty($data, 'The approved module context must contain exported data.');
+        $this->assertSame(get_string('like', 'local_datacurso_ratings'), $data->rating);
+        $this->assertSame('Loved the page', $data->feedback);
+        $this->assertSame(transform::datetime($created), $data->timecreated);
+        $this->assertSame(transform::datetime($modified), $data->timemodified);
+        $this->assertObjectNotHasProperty('userid', $data, 'Internal ids must not be exported.');
+        $this->assertObjectNotHasProperty('cmid', $data, 'Internal ids must not be exported.');
 
         $this->assertFalse(
-            $DB->record_exists('local_datacurso_ratings', ['userid' => $usera->id]),
-            'User A\'s ratings must be deleted.'
+            writer::with_context($forumctx)->has_any_data(),
+            'A module context that was not approved must not receive any data.'
         );
-        $this->assertTrue(
-            $DB->record_exists('local_datacurso_ratings', ['userid' => $userb->id]),
-            'User B\'s ratings must remain untouched after deleting User A.'
+        $this->assertFalse(
+            writer::with_context(\context_system::instance())->has_any_data(),
+            'The system context must not receive any data.'
         );
     }
 
     /**
-     * Verify that a mass delete in system context removes ratings but preserves feedback phrases.
-     *
-     * Predefined feedback phrases are site configuration created by the administrator:
-     * they hold no personal data (the table has no userid column), so a GDPR mass
-     * delete must leave them untouched.
-     *
-     * Spec: MDL-INT-015 step 3.
+     * A dislike is exported with its readable label.
      */
-    public function test_mass_delete_in_system_context_preserves_feedback_phrases(): void {
+    public function test_export_user_data_exports_dislike_label(): void {
+        $this->resetAfterTest(true);
+        ['forum' => $forum, 'student1' => $student1] = $this->create_fixture();
+        $this->insert_rating($student1->id, $forum, 0, 'Too long', time());
+        $forumctx = \context_module::instance($forum->cmid);
+
+        provider::export_user_data(new approved_contextlist($student1, 'local_datacurso_ratings', [$forumctx->id]));
+
+        $data = writer::with_context($forumctx)->get_data($this->subcontext());
+        $this->assertSame(get_string('dislike', 'local_datacurso_ratings'), $data->rating);
+    }
+
+    /**
+     * Deleting a module context removes every rating of that module and nothing else.
+     */
+    public function test_delete_data_for_all_users_in_context_deletes_only_that_module(): void {
         global $DB;
         $this->resetAfterTest(true);
+        ['course' => $course, 'page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] =
+            $this->create_fixture();
+        $now = time();
 
-        $user   = $this->getDataGenerator()->create_user();
-        $course = $this->getDataGenerator()->create_course();
+        $this->insert_rating($student1->id, $page, 1, 'Page feedback', $now);
+        $this->insert_rating($student2->id, $page, 0, 'Other feedback', $now);
+        $this->insert_rating($student1->id, $forum, 1, 'Forum feedback', $now);
 
-        $this->insert_rating($user->id, $course->id, 1, 1);
-        $this->insert_feedback_phrase('Great activity!', 'like');
+        provider::delete_data_for_all_users_in_context(\context_course::instance($course->id));
+        $this->assertEquals(3, $DB->count_records('local_datacurso_ratings'), 'A course context must delete nothing.');
 
-        $syscontext = \context_system::instance();
-        \local_datacurso_ratings\privacy\provider::delete_data_for_all_users_in_context($syscontext);
+        provider::delete_data_for_all_users_in_context(\context_system::instance());
+        $this->assertEquals(3, $DB->count_records('local_datacurso_ratings'), 'The system context must delete nothing.');
 
-        $this->assertEquals(
-            0,
-            $DB->count_records('local_datacurso_ratings'),
-            'All ratings must be deleted after mass delete in system context.'
+        provider::delete_data_for_all_users_in_context(\context_module::instance($page->cmid));
+        $this->assertEquals(0, $DB->count_records('local_datacurso_ratings', ['cmid' => $page->cmid]));
+        $this->assertEquals(1, $DB->count_records('local_datacurso_ratings', ['cmid' => $forum->cmid]));
+    }
+
+    /**
+     * Deleting a user's data only removes the rows in the approved module contexts.
+     */
+    public function test_delete_data_for_user_deletes_only_approved_contexts(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        ['page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] = $this->create_fixture();
+        $now = time();
+
+        $this->insert_rating($student1->id, $page, 1, 'Page feedback', $now);
+        $this->insert_rating($student1->id, $forum, 0, 'Forum feedback', $now);
+        $this->insert_rating($student2->id, $page, 1, 'Other feedback', $now);
+
+        $pagectx = \context_module::instance($page->cmid);
+        provider::delete_data_for_user(new approved_contextlist($student1, 'local_datacurso_ratings', [$pagectx->id]));
+
+        $this->assertFalse($DB->record_exists('local_datacurso_ratings', ['userid' => $student1->id, 'cmid' => $page->cmid]));
+        $this->assertTrue(
+            $DB->record_exists('local_datacurso_ratings', ['userid' => $student1->id, 'cmid' => $forum->cmid]),
+            'Ratings in contexts that were not approved must remain.'
         );
+        $this->assertTrue(
+            $DB->record_exists('local_datacurso_ratings', ['userid' => $student2->id, 'cmid' => $page->cmid]),
+            'Other users\' ratings must remain untouched.'
+        );
+    }
+
+    /**
+     * Deleting an approved userlist only removes the listed users' rows in that module.
+     */
+    public function test_delete_data_for_users_deletes_only_listed_users_in_module(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        ['course' => $course, 'page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] =
+            $this->create_fixture();
+        $now = time();
+
+        $this->insert_rating($student1->id, $page, 1, 'Page feedback', $now);
+        $this->insert_rating($student2->id, $page, 0, 'Other feedback', $now);
+        $this->insert_rating($student1->id, $forum, 1, 'Forum feedback', $now);
+
+        $coursectx = \context_course::instance($course->id);
+        provider::delete_data_for_users(new approved_userlist($coursectx, 'local_datacurso_ratings', [$student1->id]));
+        $this->assertEquals(3, $DB->count_records('local_datacurso_ratings'), 'A course context must delete nothing.');
+
+        $pagectx = \context_module::instance($page->cmid);
+        provider::delete_data_for_users(new approved_userlist($pagectx, 'local_datacurso_ratings', [$student1->id]));
+
+        $this->assertFalse($DB->record_exists('local_datacurso_ratings', ['userid' => $student1->id, 'cmid' => $page->cmid]));
+        $this->assertTrue($DB->record_exists('local_datacurso_ratings', ['userid' => $student2->id, 'cmid' => $page->cmid]));
+        $this->assertTrue($DB->record_exists('local_datacurso_ratings', ['userid' => $student1->id, 'cmid' => $forum->cmid]));
+    }
+
+    /**
+     * Predefined feedback phrases are admin site configuration, not personal data:
+     * no privacy delete may touch them.
+     */
+    public function test_privacy_deletes_preserve_feedback_phrases(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+        ['page' => $page, 'student1' => $student1, 'student2' => $student2] = $this->create_fixture();
+        $now = time();
+
+        $this->insert_rating($student1->id, $page, 1, 'Page feedback', $now);
+        $this->insert_rating($student2->id, $page, 0, 'Other feedback', $now);
+        $this->insert_feedback_phrase('Great activity!', 'like');
+        $this->insert_feedback_phrase('Too long', 'dislike');
+
+        $pagectx = \context_module::instance($page->cmid);
+        provider::delete_data_for_users(new approved_userlist($pagectx, 'local_datacurso_ratings', [$student2->id]));
+        provider::delete_data_for_user(new approved_contextlist($student1, 'local_datacurso_ratings', [$pagectx->id]));
+        provider::delete_data_for_all_users_in_context($pagectx);
+
+        $this->assertEquals(0, $DB->count_records('local_datacurso_ratings'));
         $this->assertEquals(
-            1,
+            2,
             $DB->count_records('local_datacurso_ratings_feedback'),
-            'Predefined feedback phrases are admin site configuration, not personal data: ' .
-            'they must survive a mass delete in system context.'
+            'Predefined feedback phrases must survive every privacy delete.'
         );
     }
 }

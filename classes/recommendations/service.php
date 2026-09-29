@@ -28,13 +28,41 @@ namespace local_datacurso_ratings\recommendations;
  */
 class service {
     /**
+     * Get the site-wide like ratio across all ratings.
+     *
+     * Used as the category preference fallback when a user has no ratings in a
+     * category. Callers that process many users should compute it once and pass
+     * it to get_recommendations_for_user() instead of recomputing it per user.
+     *
+     * @return float Ratio in 0..1; 0.5 when there are no ratings at all.
+     */
+    public static function get_global_ratio(): float {
+        global $DB;
+
+        $global = $DB->get_record_sql("
+            SELECT
+                SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) AS likes,
+                SUM(CASE WHEN rating = 0 THEN 1 ELSE 0 END) AS dislikes
+            FROM {local_datacurso_ratings}
+        ");
+        $globallikes = (int)($global->likes ?? 0);
+        $globaldislikes = (int)($global->dislikes ?? 0);
+
+        return ($globallikes + $globaldislikes) > 0
+            ? ($globallikes / ($globallikes + $globaldislikes))
+            : 0.5;
+    }
+
+    /**
      * Get recommended courses for a specific user.
      *
      * @param int $userid The user ID.
      * @param int $limit  Maximum number of recommendations to return.
+     * @param float|null $globalratio Precomputed site-wide like ratio (see get_global_ratio());
+     *                                null computes it from the database.
      * @return array The list of recommended courses.
      */
-    public static function get_recommendations_for_user(int $userid, int $limit = 5): array {
+    public static function get_recommendations_for_user(int $userid, int $limit = 5, ?float $globalratio = null): array {
         global $DB;
 
         // Step 1: User preferences by category.
@@ -56,18 +84,10 @@ class service {
             $categorypref[$c->categoryid] = $total > 0 ? ($likes / $total) : null;
         }
 
-        // Step 2: Global rating ratio.
-        $global = $DB->get_record_sql("
-            SELECT
-                SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END) AS likes,
-                SUM(CASE WHEN rating = 0 THEN 1 ELSE 0 END) AS dislikes
-            FROM {local_datacurso_ratings}
-        ");
-        $globallikes = (int)($global->likes ?? 0);
-        $globaldislikes = (int)($global->dislikes ?? 0);
-        $globalratio = ($globallikes + $globaldislikes) > 0
-            ? ($globallikes / ($globallikes + $globaldislikes))
-            : 0.5;
+        // Step 2: Global rating ratio (computed here unless the caller already has it).
+        if ($globalratio === null) {
+            $globalratio = self::get_global_ratio();
+        }
 
         // Step 3: Get courses the user is already enrolled in (to exclude).
         $enrolledids = [];

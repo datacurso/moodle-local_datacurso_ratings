@@ -37,26 +37,19 @@ $capabilities = [
         ],
     ],
 
-    'local/datacurso_ratings:viewgeneralreport' => [
-        'riskbitmask' => RISK_CONFIG,
+    'local/datacurso_ratings:rate' => [
+        'riskbitmask' => RISK_SPAM,
         'captype' => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
+        'contextlevel' => CONTEXT_MODULE,
         'archetypes' => [
-            'manager' => CAP_ALLOW,
-        ],
-    ],
-    'local/datacurso_ratings:generateanalysisgeneral' => [
-        'riskbitmask' => RISK_CONFIG,
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [
-            'manager' => CAP_ALLOW,
+            'student' => CAP_ALLOW,
+            'user' => CAP_ALLOW,
         ],
     ],
     'local/datacurso_ratings:generateanalysiscourse' => [
         'riskbitmask' => RISK_CONFIG,
         'captype' => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
+        'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [
             'manager' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
@@ -66,7 +59,7 @@ $capabilities = [
     'local/datacurso_ratings:generateanalysisactivity' => [
         'riskbitmask' => RISK_CONFIG,
         'captype' => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
+        'contextlevel' => CONTEXT_MODULE,
         'archetypes' => [
             'manager' => CAP_ALLOW,
             'editingteacher' => CAP_ALLOW,
