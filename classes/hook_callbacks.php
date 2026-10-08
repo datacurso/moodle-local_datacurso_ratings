@@ -56,16 +56,14 @@ class hook_callbacks {
 
         $cm = $PAGE->cm;
 
-        // Tenant resolution.
-        $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+        // The user must be allowed to rate activities in this module context.
+        if (!has_capability('local/datacurso_ratings:rate', $PAGE->context)) {
+            return;
+        }
 
-        $enabled = (int) \aiprovider_datacurso\local\tenant_config::get(
-            'local_datacurso_ratings',
-            $tenantid,
-            'enabled'
-        );
-
-        if ($enabled !== 1) {
+        // Ratings must be on for the tenant of the user (the site setting without tenancy).
+        $tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id((int)$USER->id);
+        if (!\local_datacurso_ratings\local\tenancy::is_enabled($tenantid)) {
             return;
         }
 
@@ -93,31 +91,7 @@ class hook_callbacks {
             return;
         }
 
-        $coremodules = [
-            'resource',
-            'folder',
-            'page',
-            'url',
-            'imscp',
-            'book',
-            'assign',
-            'chat',
-            'choice',
-            'data',
-            'feedback',
-            'forum',
-            'glossary',
-            'lesson',
-            'quiz',
-            'scorm',
-            'survey',
-            'wiki',
-            'workshop',
-            'lti',
-            'h5pactivity',
-        ];
-
-        if (!in_array($cm->modname, $coremodules)) {
+        if (!local_datacurso_ratings_is_module_supported($cm->modname)) {
             return;
         }
 
@@ -131,6 +105,7 @@ class hook_callbacks {
             'cmid' => $cm->id,
             'likeItems' => $feedbackdatalike['items'],
             'dislikeItems' => $feedbackdatadislike['items'],
+            'maxcommentlength' => local_datacurso_ratings_get_max_comment_length(),
         ]);
 
         // Inject before footer.

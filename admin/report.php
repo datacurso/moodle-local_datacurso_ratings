@@ -48,7 +48,7 @@ echo $OUTPUT->header();
 $headerlogo = new \local_datacurso_ratings\output\header_logo();
 echo $OUTPUT->render($headerlogo);
 
-echo '<div id="general-ratings-report-container"
+echo '<div id="general-ratings-report-container" data-region="general-ratings-report-container"
           data-categories="' . htmlentities(json_encode($categories)) . '">
       </div>';
 

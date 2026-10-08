@@ -17,10 +17,14 @@
 {{!
     @template local_datacurso_ratings/ai_analysis_response
 
-    TODO describe template ai_analysis_response
+    Renders the loading, success or error state of an AI analysis request.
+    The message may echo remote API output, so it must always be escaped.
 
     Example context (json):
     {
+        "loading": false,
+        "success": true,
+        "message": "The analysis result text."
     }
 }}
 
@@ -35,14 +39,14 @@
     {{#success}}
     <div class="alert alert-info mt-2" role="alert">
         <h6>
-        {{#success}}{{#str}} analysisresult, local_datacurso_ratings {{/str}}{{/success}}
+        {{#str}} analysisresult, local_datacurso_ratings {{/str}}
         </h6>
         <p>{{message}}</p>
     </div>
     {{/success}}
     {{^success}}
     <div class="alert alert-danger p-2 mb-2">
-        <i class="fa fa-exclamation-triangle"></i> {{{message}}}
-    </div>`
+        <i class="fa fa-exclamation-triangle"></i> {{message}}
+    </div>
     {{/success}}
 {{/loading}}

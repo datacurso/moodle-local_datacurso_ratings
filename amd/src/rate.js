@@ -26,6 +26,8 @@ import { get_string as getString } from 'core/str';
 import Notification from 'core/notification';
 import Templates from 'core/templates';
 
+const MAX_FEEDBACK_LENGTH = 200;
+
 /**
  * Initialise rating widget for the given cmid.
  *
@@ -143,7 +145,14 @@ export const init = (cmid) => {
 
         let feedback = '';
         if (selected) {
-            feedback = selected.value === 'other' ? (fbInput?.value || '').trim() : selected.value;
+            if (selected.value === 'other') {
+                // The comment limit only applies to free-text input; predefined
+                // phrases are admin configuration and travel unmodified.
+                const maxlength = parseInt(fbInput?.getAttribute('maxlength') || '', 10) || MAX_FEEDBACK_LENGTH;
+                feedback = (fbInput?.value || '').trim().slice(0, maxlength);
+            } else {
+                feedback = selected.value;
+            }
         }
 
         sendRating(cmid, rating, feedback);

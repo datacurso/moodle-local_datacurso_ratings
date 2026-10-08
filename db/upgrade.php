@@ -132,5 +132,62 @@ function xmldb_local_datacurso_ratings_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026050400, 'local', 'datacurso_ratings');
     }
 
+    if ($oldversion < 2026092401) {
+        // Privacy provider now scopes ratings to module contexts and declares the
+        // Datacurso AI external location; db/events.php registers cleanup observers.
+        // db/access.php adds local/datacurso_ratings:rate, moves the AI analysis
+        // capabilities to course/module context and drops the unused
+        // viewgeneralreport and generateanalysisgeneral capabilities.
+        // No schema change: the savepoint refreshes the privacy metadata, event and
+        // capability caches.
+        upgrade_plugin_savepoint(true, 2026092401, 'local', 'datacurso_ratings');
+    }
+
+    if ($oldversion < 2026100700) {
+        // 1.1.0-wp joins two schemas. A site that ran 1.0.4-wp has tenant_id on the ratings and the
+        // feedback phrases, but a fresh install of it declared the column NOT NULL without a
+        // default, so code that does not set it cannot insert. A site that ran the plugin without
+        // Workplace (main, 1.1.0) has no tenant_id at all and one course setting per course. Both
+        // end with tenant_id NOT NULL DEFAULT 0, which also serves as the shared tenant.
+        $tenantfields = [
+            'local_datacurso_ratings' => 'userid',
+            'local_datacurso_ratings_feedback' => 'type',
+        ];
+        foreach ($tenantfields as $tablename => $previous) {
+            $table = new xmldb_table($tablename);
+            $field = new xmldb_field('tenant_id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', $previous);
+            if ($dbman->field_exists($table, $field)) {
+                $dbman->change_field_default($table, $field);
+            } else {
+                $dbman->add_field($table, $field);
+            }
+        }
+
+        // Course settings: one per course and tenant, as on Workplace.
+        $table = new xmldb_table('local_datacurso_ratings_course_settings');
+        $field = new xmldb_field('tenant_id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0', 'courseid');
+        if (!$dbman->field_exists($table, $field)) {
+            $oldkey = new xmldb_key('courseid_uix', XMLDB_KEY_UNIQUE, ['courseid']);
+            $dbman->drop_key($table, $oldkey);
+            $dbman->add_field($table, $field);
+            $dbman->add_key($table, new xmldb_key('courseid_tenant_uix', XMLDB_KEY_UNIQUE, ['courseid', 'tenant_id']));
+        }
+
+        // Ratings saved without a tenant belong to the tenant of the person who rated, when the
+        // site has tenants. Feedback phrases and course settings saved without one stay shared.
+        if ($dbman->table_exists('tool_tenant_user')) {
+            $DB->execute("
+                UPDATE {local_datacurso_ratings}
+                   SET tenant_id = (SELECT MAX(tu.tenantid)
+                                      FROM {tool_tenant_user} tu
+                                     WHERE tu.userid = {local_datacurso_ratings}.userid)
+                 WHERE tenant_id = 0
+                   AND EXISTS (SELECT 1 FROM {tool_tenant_user} tu2 WHERE tu2.userid = {local_datacurso_ratings}.userid)
+            ");
+        }
+
+        upgrade_plugin_savepoint(true, 2026100700, 'local', 'datacurso_ratings');
+    }
+
     return true;
 }

@@ -24,6 +24,11 @@
 import Ajax from 'core/ajax';
 import Templates from 'core/templates';
 import Notification from 'core/notification';
+import {getStrings} from 'core/str';
+import {toCsvRow} from 'local_datacurso_ratings/csv_utils';
+
+/** @type {Array} */
+let cachedActivities = [];
 
 /**
  * Initialize the ratings report for a specific course.
@@ -43,6 +48,10 @@ export const init = (courseid) => {
         args: {courseid}
     }])[0]
         .then((data) => processReportData(data, courseid))
+        .then((templateData) => {
+            cachedActivities = Array.isArray(templateData.activities) ? templateData.activities : [];
+            return templateData;
+        })
         .then((templateData) => Templates.render('local_datacurso_ratings/report_ratings_course', templateData))
         .then((html, js) => {
             container.innerHTML = html;
@@ -62,6 +71,7 @@ export const init = (courseid) => {
  * @returns {Object}
  */
 function processReportData(data, courseid) {
+    const canGenerateCourseAi = data.length > 0 && !!data[0].can_generate_course_ai;
     let totalLikes = 0;
     let totalDislikes = 0;
     let activitiesWithRatings = 0;
@@ -106,6 +116,7 @@ function processReportData(data, courseid) {
     return {
         courseid,
         activities: processedActivities,
+        can_generate_course_ai: canGenerateCourseAi,
         has_data: processedActivities.length > 0,
         summary: {
             total_activities: processedActivities.length,
@@ -150,9 +161,23 @@ export async function showLoading(container) {
  * Initialize interactive features in the rendered table.
  */
 function initTableFeatures() {
+    const exportCsvButton = document.querySelector('[data-action="course-report-export-csv"]');
+    if (exportCsvButton) {
+        exportCsvButton.addEventListener('click', exportToCSV);
+    }
+
+    const reloadButton = document.querySelector('[data-action="course-report-reload"]');
+    if (reloadButton) {
+        reloadButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            window.location.reload();
+        });
+    }
+
     document.querySelectorAll('.expand-comments').forEach((button) => {
-        button.addEventListener('click', (e) => {
-            const targetSelector = e.currentTarget.getAttribute('data-target');
+        button.addEventListener('click', async(e) => {
+            const toggleButton = e.currentTarget;
+            const targetSelector = toggleButton.getAttribute('data-target');
             const commentsDiv = document.querySelector(targetSelector);
             if (!commentsDiv) {
                 return;
@@ -160,11 +185,82 @@ function initTableFeatures() {
 
             const isHidden = commentsDiv.style.display === 'none' || !commentsDiv.style.display;
             commentsDiv.style.display = isHidden ? 'block' : 'none';
-            e.currentTarget.textContent = isHidden ? 'Ocultar comentarios' : 'Ver comentarios';
+
+            try {
+                const [hidecomments, viewcomments] = await getStrings([
+                    {key: 'hidecomments', component: 'local_datacurso_ratings'},
+                    {key: 'viewcomments', component: 'local_datacurso_ratings'},
+                ]);
+                toggleButton.textContent = isHidden ? hidecomments : viewcomments;
+            } catch (error) {
+                Notification.exception(error);
+            }
         });
     });
 
     initTableSorting();
+}
+
+/**
+ * Export current course report activities to CSV.
+ */
+async function exportToCSV() {
+    if (!Array.isArray(cachedActivities) || cachedActivities.length === 0) {
+        return;
+    }
+
+    let strings;
+    try {
+        strings = await getStrings([
+            'csvfilenamecourse',
+            'course',
+            'activity',
+            'totalratings',
+            'likes',
+            'dislikes',
+            'satisfaction',
+            'comments',
+        ].map((key) => ({key, component: 'local_datacurso_ratings'})));
+    } catch (error) {
+        Notification.exception(error);
+        return;
+    }
+
+    const [csvfilenamecourse, ...headers] = strings;
+
+    const rows = cachedActivities.map((activity) => [
+        activity.curso || '',
+        activity.actividad || '',
+        activity.total_ratings || 0,
+        activity.likes || 0,
+        activity.dislikes || 0,
+        activity.formatted_percentage || '',
+        activity.comentarios || '',
+    ]);
+
+    const csvcontent = [
+        toCsvRow(headers),
+        ...rows.map(toCsvRow),
+    ].join('\n');
+
+    const blob = new Blob(['\ufeff' + csvcontent], {type: 'text/csv;charset=utf-8;'});
+    const link = document.createElement('a');
+    const courseName = cachedActivities[0]?.curso || '';
+    const normalizedCourseName = courseName
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '_')
+        .replace(/^_+|_+$/g, '')
+        .toLowerCase();
+    const filenameparts = [csvfilenamecourse];
+    if (normalizedCourseName) {
+        filenameparts.push(normalizedCourseName);
+    }
+    filenameparts.push(new Date().toISOString().slice(0, 10));
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filenameparts.join('_')}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
 }
 
 /**

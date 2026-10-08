@@ -32,6 +32,9 @@ use context_system;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class feedback_service extends external_api {
+    /** @var int Maximum feedback text length, mirrors maxlength in templates/feedback_page.mustache. */
+    const FEEDBACK_TEXT_MAX_LENGTH = 150;
+
     /**
      * Define input parameters for add_feedback.
      *
@@ -63,8 +66,14 @@ class feedback_service extends external_api {
         );
         require_capability('moodle/site:config', context_system::instance());
 
+        if (\core_text::strlen($params['feedbacktext']) > self::FEEDBACK_TEXT_MAX_LENGTH) {
+            throw new \invalid_parameter_exception(
+                'feedbacktext must not exceed ' . self::FEEDBACK_TEXT_MAX_LENGTH . ' characters.'
+            );
+        }
+
         // Tenant resolution.
-        $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+        $tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id((int)$USER->id);
 
         $record = (object)[
             'feedbacktext' => $params['feedbacktext'],

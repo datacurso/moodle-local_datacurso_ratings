@@ -45,7 +45,7 @@ class course_form_hook {
     public static function after_form_definition(after_form_definition $hook): void {
         global $COURSE;
 
-        if (!get_config('local_datacurso_ratings', 'enabled')) {
+        if (!\local_datacurso_ratings\local\tenancy::is_enabled()) {
             return;
         }
 
@@ -87,7 +87,7 @@ class course_form_hook {
     public static function after_form_submission(after_form_submission $hook): void {
         global $COURSE;
 
-        if (!get_config('local_datacurso_ratings', 'enabled')) {
+        if (!\local_datacurso_ratings\local\tenancy::is_enabled()) {
             return;
         }
 

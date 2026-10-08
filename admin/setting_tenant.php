@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * TODO describe file setting_tenant
+ * Settings of the ratings for the tenant of the administrator (Moodle Workplace).
  *
  * @package    local_datacurso_ratings
- * @copyright  2025 YOUR NAME <your@email.com>
+ * @copyright  2025 Datacurso
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -31,7 +31,7 @@ require_capability('moodle/site:config', $context);
 global $PAGE, $OUTPUT, $USER;
 
 // Tenant resolution.
-$tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+$tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id((int)$USER->id);
 
 $url = new moodle_url('/local/datacurso_ratings/admin/setting_tenant.php');
 $PAGE->set_url(new moodle_url('/local/datacurso_ratings/admin/setting_tenant.php'));
@@ -52,11 +52,7 @@ if ($form->is_cancelled()) {
 
 // Submit.
 if ($data = $form->get_data()) {
-    \aiprovider_datacurso\local\tenant_config::save_from_form(
-        'local_datacurso_ratings',
-        $tenantid,
-        $data
-    );
+    \local_datacurso_ratings\local\tenancy::set_enabled($tenantid, !empty($data->enabled));
 
     redirect(
         $url,

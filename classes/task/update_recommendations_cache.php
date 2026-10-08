@@ -46,24 +46,38 @@ class update_recommendations_cache extends \core\task\scheduled_task {
         // Clear previous cache.
         $cache->purge();
 
-        // Get all active users (optional: students only for optimization).
-        $users = $DB->get_records_select('user', "deleted = 0 AND suspended = 0 AND confirmed = 1");
+        // The fallback ratio is the same for every user of a tenant: compute it once per tenant.
+        $ratios = [];
+
+        // Stream active users (ids only) instead of loading every user record into memory.
+        $users = $DB->get_recordset_select('user', "deleted = 0 AND suspended = 0 AND confirmed = 1", [], 'id ASC', 'id');
 
         $count = 0;
-        foreach ($users as $user) {
-            $userid = (int)$user->id;
+        try {
+            foreach ($users as $user) {
+                $userid = (int)$user->id;
+                $tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id($userid);
+                $ratios[$tenantid] ??= \local_datacurso_ratings\recommendations\service::get_global_ratio($tenantid);
 
-            // Get recommendations.
-            $recs = \local_datacurso_ratings\recommendations\service::get_recommendations_for_user($userid, 50);
+                // Get recommendations.
+                $recs = \local_datacurso_ratings\recommendations\service::get_recommendations_for_user(
+                    $userid,
+                    50,
+                    $ratios[$tenantid]
+                );
 
-            // Save to cache.
-            $cachekey = "user_{$userid}";
-            $cache->set($cachekey, $recs);
+                // Save to cache.
+                $cachekey = "user_{$userid}";
+                $cache->set($cachekey, $recs);
 
-            $count++;
-            if ($count % 50 === 0) {
-                mtrace("Processed {$count} users...");
+                $count++;
+                if ($count % 50 === 0) {
+                    mtrace("Processed {$count} users...");
+                }
             }
+        } finally {
+            // Always release the cursor, even if a user's recommendations throw.
+            $users->close();
         }
 
         mtrace("Finished updating cache for {$count} users.");

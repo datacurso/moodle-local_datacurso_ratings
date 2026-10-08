@@ -17,14 +17,17 @@
 namespace local_datacurso_ratings\privacy;
 
 use core_privacy\local\metadata\collection;
-use core_privacy\local\request\contextlist;
 use core_privacy\local\request\approved_contextlist;
 use core_privacy\local\request\approved_userlist;
+use core_privacy\local\request\contextlist;
+use core_privacy\local\request\transform;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
 
 /**
  * Privacy Subsystem implementation for local_datacurso_ratings.
+ *
+ * Every rating belongs to the module context of the rated course module.
  *
  * @package   local_datacurso_ratings
  * @category  privacy
@@ -33,9 +36,10 @@ use core_privacy\local\request\writer;
  */
 class provider implements
     \core_privacy\local\metadata\provider,
+    \core_privacy\local\request\core_userlist_provider,
     \core_privacy\local\request\plugin\provider {
     /**
-     * Describe the types of personal data stored by this plugin.
+     * Describe the types of personal data stored or sent by this plugin.
      *
      * @param collection $collection
      * @return collection
@@ -57,23 +61,24 @@ class provider implements
             'privacy:metadata:local_datacurso_ratings'
         );
 
-        $collection->add_database_table(
-            'local_datacurso_ratings_feedback',
+        $collection->add_external_location_link(
+            'datacurso_ai',
             [
-                'feedbacktext' => 'privacy:metadata:local_datacurso_ratings_feedback:feedbacktext',
-                'type'         => 'privacy:metadata:local_datacurso_ratings_feedback:type',
-                'tenant_id'    => 'privacy:metadata:local_datacurso_ratings_feedback:tenant_id',
-                'timecreated'  => 'privacy:metadata:local_datacurso_ratings_feedback:timecreated',
-                'timemodified' => 'privacy:metadata:local_datacurso_ratings_feedback:timemodified',
+                'feedback'        => 'privacy:metadata:datacurso_ai:feedback',
+                'course'          => 'privacy:metadata:datacurso_ai:course',
+                'activity'        => 'privacy:metadata:datacurso_ai:activity',
+                'activity_type'   => 'privacy:metadata:datacurso_ai:activity_type',
+                'approvalpercent' => 'privacy:metadata:datacurso_ai:approvalpercent',
+                'userid'          => 'privacy:metadata:datacurso_ai:userid',
             ],
-            'privacy:metadata:local_datacurso_ratings_feedback'
+            'privacy:metadata:datacurso_ai'
         );
 
         return $collection;
     }
 
     /**
-     * Get the list of contexts that contain user information for the specified user.
+     * Get the module contexts of the course modules rated by the specified user.
      *
      * @param int $userid The user ID.
      * @return contextlist
@@ -83,10 +88,10 @@ class provider implements
 
         $sql = "SELECT ctx.id
                   FROM {local_datacurso_ratings} r
-                  JOIN {context} ctx ON ctx.contextlevel = :contextlevel
+                  JOIN {context} ctx ON ctx.instanceid = r.cmid AND ctx.contextlevel = :contextlevel
                  WHERE r.userid = :userid";
         $params = [
-            'contextlevel' => CONTEXT_SYSTEM,
+            'contextlevel' => CONTEXT_MODULE,
             'userid' => $userid,
         ];
 
@@ -95,81 +100,100 @@ class provider implements
     }
 
     /**
-     * Export all user data for the specified context.
+     * Get the list of users who rated the course module of the given context.
+     *
+     * @param userlist $userlist The userlist to add the users to.
+     */
+    public static function get_users_in_context(userlist $userlist) {
+        $context = $userlist->get_context();
+        if (!$context instanceof \context_module) {
+            return;
+        }
+
+        $sql = "SELECT r.userid
+                  FROM {local_datacurso_ratings} r
+                  JOIN {context} ctx ON ctx.instanceid = r.cmid AND ctx.contextlevel = :contextlevel
+                 WHERE ctx.id = :contextid";
+        $params = [
+            'contextlevel' => CONTEXT_MODULE,
+            'contextid' => $context->id,
+        ];
+
+        $userlist->add_from_sql('userid', $sql, $params);
+    }
+
+    /**
+     * Export the user's rating for every approved module context.
      *
      * @param approved_contextlist $contextlist
      */
     public static function export_user_data(approved_contextlist $contextlist) {
         global $DB;
 
-        if (empty($contextlist->get_contextids())) {
+        $contextids = $contextlist->get_contextids();
+        if (empty($contextids)) {
             return;
         }
 
         $userid = $contextlist->get_user()->id;
-        $ratings = $DB->get_records('local_datacurso_ratings', ['userid' => $userid]);
+        [$insql, $inparams] = $DB->get_in_or_equal($contextids, SQL_PARAMS_NAMED);
 
-        if (!empty($ratings)) {
-            foreach ($contextlist as $context) {
-                writer::with_context($context)->export_data(
-                    ['Ratings'],
-                    (object)['entries' => array_values($ratings)]
-                );
-            }
+        $sql = "SELECT r.id, r.rating, r.feedback, r.timecreated, r.timemodified, ctx.id AS contextid
+                  FROM {local_datacurso_ratings} r
+                  JOIN {context} ctx ON ctx.instanceid = r.cmid AND ctx.contextlevel = :contextlevel
+                 WHERE r.userid = :userid AND ctx.id $insql
+              ORDER BY r.id ASC";
+        $params = ['contextlevel' => CONTEXT_MODULE, 'userid' => $userid] + $inparams;
+
+        $subcontext = [get_string('privacy:subcontext:ratings', 'local_datacurso_ratings')];
+        $ratings = $DB->get_recordset_sql($sql, $params);
+        foreach ($ratings as $rating) {
+            $context = \context::instance_by_id($rating->contextid);
+            $data = (object)[
+                'rating'       => get_string($rating->rating ? 'like' : 'dislike', 'local_datacurso_ratings'),
+                'feedback'     => $rating->feedback,
+                'timecreated'  => transform::datetime($rating->timecreated),
+                'timemodified' => transform::datetime($rating->timemodified),
+            ];
+            writer::with_context($context)->export_data($subcontext, $data);
         }
+        $ratings->close();
     }
 
     /**
-     * Get the list of users who have data in the given context.
-     *
-     * @param userlist $userlist The userlist to add the users to.
-     */
-    public static function get_users_in_context(userlist $userlist) {
-        global $DB;
-
-        $context = $userlist->get_context();
-
-        // Aceptar tanto el contexto del sistema como el de usuario.
-        if (!in_array($context->contextlevel, [CONTEXT_SYSTEM, CONTEXT_USER])) {
-            return;
-        }
-
-        $sql = "SELECT userid FROM {local_datacurso_ratings}";
-        $userlist->add_from_sql('userid', $sql, []);
-    }
-
-    /**
-     * Delete all data for all users in the specified context.
+     * Delete all ratings of the course module of the given context.
      *
      * @param \context $context
      */
     public static function delete_data_for_all_users_in_context(\context $context) {
         global $DB;
 
-        if ($context->contextlevel == CONTEXT_SYSTEM) {
-            $DB->delete_records('local_datacurso_ratings');
-            $DB->delete_records('local_datacurso_ratings_feedback');
+        if (!$context instanceof \context_module) {
+            return;
         }
+
+        $DB->delete_records('local_datacurso_ratings', ['cmid' => $context->instanceid]);
     }
 
     /**
-     * Delete all user data for the specified user in the specified context.
+     * Delete the user's ratings in every approved module context.
      *
      * @param approved_contextlist $contextlist
      */
     public static function delete_data_for_user(approved_contextlist $contextlist) {
         global $DB;
 
-        if (empty($contextlist->get_contextids())) {
-            return;
-        }
-
         $userid = $contextlist->get_user()->id;
-        $DB->delete_records('local_datacurso_ratings', ['userid' => $userid]);
+        foreach ($contextlist as $context) {
+            if (!$context instanceof \context_module) {
+                continue;
+            }
+            $DB->delete_records('local_datacurso_ratings', ['cmid' => $context->instanceid, 'userid' => $userid]);
+        }
     }
 
     /**
-     * Delete multiple users within a single context.
+     * Delete the ratings of the listed users in the module context of the userlist.
      *
      * @param approved_userlist $userlist
      */
@@ -177,14 +201,17 @@ class provider implements
         global $DB;
 
         $context = $userlist->get_context();
-        if ($context->contextlevel != CONTEXT_SYSTEM) {
+        if (!$context instanceof \context_module) {
             return;
         }
 
         $userids = $userlist->get_userids();
-        if (!empty($userids)) {
-            [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
-            $DB->delete_records_select('local_datacurso_ratings', "userid $insql", $params);
+        if (empty($userids)) {
+            return;
         }
+
+        [$insql, $params] = $DB->get_in_or_equal($userids, SQL_PARAMS_NAMED);
+        $params['cmid'] = $context->instanceid;
+        $DB->delete_records_select('local_datacurso_ratings', "cmid = :cmid AND userid $insql", $params);
     }
 }

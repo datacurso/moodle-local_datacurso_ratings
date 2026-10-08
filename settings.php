@@ -47,11 +47,36 @@ if ($hassiteconfig) {
         'moodle/site:config'
     ));
 
-    // New page of general settings.
+    // Settings of the tenant of the administrator (Workplace).
     $ADMIN->add('local_datacurso_ratings_category', new admin_externalpage(
         'local_datacurso_ratings_settings',
         get_string('generalsettings', 'local_datacurso_ratings'),
         new moodle_url('/local/datacurso_ratings/admin/setting_tenant.php'),
         'moodle/site:config'
     ));
+
+    // Site settings: whether ratings are on for a tenant that has not set it on its own page, and
+    // the comment limit, which is the same for every tenant.
+    $settingspage = new admin_settingpage(
+        'local_datacurso_ratings_sitesettings',
+        get_string('settings', 'core')
+    );
+
+    $settingspage->add(new admin_setting_configcheckbox(
+        'local_datacurso_ratings/enabled',
+        get_string('enableplugin', 'local_datacurso_ratings'),
+        get_string('enableplugin_desc', 'local_datacurso_ratings'),
+        1
+    ));
+
+    // Max character length for student comments.
+    $settingspage->add(new admin_setting_configtext(
+        'local_datacurso_ratings/maxcommentlength',
+        get_string('maxcommentlength', 'local_datacurso_ratings'),
+        get_string('maxcommentlength_desc', 'local_datacurso_ratings'),
+        200,
+        PARAM_INT
+    ));
+
+    $ADMIN->add('local_datacurso_ratings_category', $settingspage);
 }
