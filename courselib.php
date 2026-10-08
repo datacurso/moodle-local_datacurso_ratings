@@ -31,25 +31,11 @@
  * @return bool True if enabled, false otherwise.
  */
 function local_datacurso_ratings_is_enabled_for_course(int $courseid): bool {
-    global $DB, $USER;
-
-    if (!get_config('local_datacurso_ratings', 'enabled')) {
+    if (!\local_datacurso_ratings\local\tenancy::is_enabled()) {
         return false;
     }
 
-    // Resolve tenant ID for Workplace multitenancy.
-    $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
-
-    $record = $DB->get_record('local_datacurso_ratings_course_settings', [
-        'courseid' => $courseid,
-        'tenant_id' => $tenantid,
-    ], 'enabled', IGNORE_MISSING);
-
-    if ($record === false) {
-        return true;
-    }
-
-    return (bool)$record->enabled;
+    return local_datacurso_ratings_get_course_enabled($courseid) ?? true;
 }
 
 /**
@@ -60,10 +46,10 @@ function local_datacurso_ratings_is_enabled_for_course(int $courseid): bool {
  * @return void
  */
 function local_datacurso_ratings_set_course_enabled(int $courseid, bool $enabled): void {
-    global $DB, $USER;
+    global $DB;
 
     // Resolve tenant ID for Workplace multitenancy.
-    $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+    $tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id();
 
     $record = $DB->get_record('local_datacurso_ratings_course_settings', [
         'courseid' => $courseid,
@@ -92,23 +78,88 @@ function local_datacurso_ratings_set_course_enabled(int $courseid, bool $enabled
 /**
  * Get the enabled status for a specific course.
  *
+ * The setting of the tenant of the current user wins; a course configured before tenants existed
+ * (a site that ran the plugin without tenancy) keeps its setting under tenant 0, which applies to
+ * every tenant that has not set its own.
+ *
  * @param int $courseid The course ID.
  * @return bool|null True if enabled, false if disabled, null if not configured.
  */
 function local_datacurso_ratings_get_course_enabled(int $courseid): ?bool {
-    global $DB, $USER;
+    global $DB;
 
     // Resolve tenant ID for Workplace multitenancy.
-    $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+    $tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id();
 
-    $record = $DB->get_record('local_datacurso_ratings_course_settings', [
-        'courseid' => $courseid,
-        'tenant_id' => $tenantid,
-    ], 'enabled', IGNORE_MISSING);
-
-    if ($record === false) {
-        return null;
+    $tenants = array_unique([$tenantid, \local_datacurso_ratings\local\tenancy::NO_TENANT]);
+    foreach ($tenants as $tenant) {
+        $record = $DB->get_record('local_datacurso_ratings_course_settings', [
+            'courseid' => $courseid,
+            'tenant_id' => $tenant,
+        ], 'enabled', IGNORE_MISSING);
+        if ($record !== false) {
+            return (bool)$record->enabled;
+        }
     }
 
-    return (bool)$record->enabled;
+    return null;
+}
+
+/**
+ * Get the list of module types that support activity ratings.
+ *
+ * @return string[] Module names (mod plugin short names).
+ */
+function local_datacurso_ratings_get_supported_modules(): array {
+    return [
+        'resource',
+        'folder',
+        'page',
+        'url',
+        'imscp',
+        'book',
+        'assign',
+        'chat',
+        'choice',
+        'data',
+        'feedback',
+        'forum',
+        'glossary',
+        'lesson',
+        'quiz',
+        'scorm',
+        'survey',
+        'wiki',
+        'workshop',
+        'lti',
+        'h5pactivity',
+        'hvp',
+    ];
+}
+
+/**
+ * Check whether the given module type supports activity ratings.
+ *
+ * @param string $modname The module name (for example 'quiz').
+ * @return bool True if ratings can be collected for this module type.
+ */
+function local_datacurso_ratings_is_module_supported(string $modname): bool {
+    return in_array($modname, local_datacurso_ratings_get_supported_modules(), true);
+}
+
+/**
+ * Get the effective maximum length for free-text student comments.
+ *
+ * The admin setting is a plain integer, so the value is bounded here: anything
+ * below 1 falls back to the default and anything above 2000 is capped, keeping
+ * the server-side truncation and the widget maxlength attribute in sync.
+ *
+ * @return int Effective limit, always within 1..2000.
+ */
+function local_datacurso_ratings_get_max_comment_length(): int {
+    $configured = (int) get_config('local_datacurso_ratings', 'maxcommentlength');
+    if ($configured < 1) {
+        $configured = 200;
+    }
+    return min(2000, $configured);
 }

@@ -25,15 +25,11 @@
 
 namespace local_datacurso_ratings\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once($CFG->libdir . '/externallib.php');
-
-use external_function_parameters;
-use external_value;
-use external_single_structure;
-use external_multiple_structure;
-use external_api;
+use core_external\external_function_parameters;
+use core_external\external_value;
+use core_external\external_single_structure;
+use core_external\external_multiple_structure;
+use core_external\external_api;
 use context_course;
 use moodle_exception;
 use core\context;
@@ -73,6 +69,7 @@ class get_ratings_report_course extends external_api {
         $context = context_course::instance($params['courseid']);
         self::validate_context($context);
         require_capability('local/datacurso_ratings:viewcoursereport', $context);
+        $cangeneratecourseai = has_capability('local/datacurso_ratings:generateanalysiscourse', $context);
 
         // Ensure course exists.
         if (!$DB->record_exists('course', ['id' => $params['courseid']])) {
@@ -128,6 +125,7 @@ class get_ratings_report_course extends external_api {
                 'dislikes' => (int)$record->dislikes,
                 'approvalpercent' => (float)$record->approvalpercent,
                 'comments' => $commentsarray,
+                'can_generate_course_ai' => $cangeneratecourseai,
             ];
         }
 
@@ -156,6 +154,7 @@ class get_ratings_report_course extends external_api {
                     'List of comments',
                     VALUE_OPTIONAL
                 ),
+                'can_generate_course_ai' => new external_value(PARAM_BOOL, 'Can generate AI analysis for course'),
             ])
         );
     }

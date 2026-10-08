@@ -1,0 +1,6 @@
+@Library('moodle-ci') _
+// Workplace branch: Moodle 4.5 only, on both db engines. The CI site is plain Moodle 4.5 without
+// tool_tenant, so the tenant code paths fall back to a single implicit tenant there.
+moodlePluginCI(moodleVersions: [
+  [version: 'MOODLE_405_STABLE', dbs: ['mariadb', 'pgsql']],
+])

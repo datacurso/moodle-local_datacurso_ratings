@@ -53,7 +53,7 @@ echo $OUTPUT->tabtree($tabs, $tab);
 global $USER;
 
 // Tenant resolution.
-$tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+$tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id((int)$USER->id);
 
 switch ($tab) {
     case 'responselike':

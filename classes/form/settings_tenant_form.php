@@ -58,14 +58,9 @@ class settings_tenant_form extends \moodleform {
 
         $data = new \stdClass();
 
-        $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+        $tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id((int)$USER->id);
 
-        $data->enabled =
-            (int) \aiprovider_datacurso\local\tenant_config::get(
-                'local_datacurso_ratings',
-                $tenantid,
-                'enabled',
-            );
+        $data->enabled = (int)\local_datacurso_ratings\local\tenancy::is_enabled($tenantid);
 
         return $data;
     }

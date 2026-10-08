@@ -16,14 +16,10 @@
 
 namespace local_datacurso_ratings\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once("$CFG->libdir/externallib.php");
-
-use external_function_parameters;
-use external_single_structure;
-use external_value;
-use external_api;
+use core_external\external_function_parameters;
+use core_external\external_single_structure;
+use core_external\external_value;
+use core_external\external_api;
 use context_system;
 use aiprovider_datacurso\httpclient\ai_services_api;
 
@@ -46,7 +42,7 @@ class get_ai_analysis_global extends external_api {
      * Execute WS: send global stats to AI and return analysis.
      */
     public static function execute() {
-        global $DB;
+        global $DB, $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), []);
 
@@ -66,16 +62,25 @@ class get_ai_analysis_global extends external_api {
         ";
         $totalactivities = $DB->count_records_sql($sqlactivities);
 
-        $sqlrated = "SELECT COUNT(DISTINCT r.cmid) FROM {local_datacurso_ratings} r";
-        $ratedactivities = $DB->count_records_sql($sqlrated);
+        // The ratings analysed are those of the tenant of the administrator and the shared ones
+        // (tenant 0), as in the report.
+        $tenant = [
+            'tenantid' => \local_datacurso_ratings\local\tenancy::get_tenant_id((int)$USER->id),
+            'notenant' => \local_datacurso_ratings\local\tenancy::NO_TENANT,
+        ];
+
+        $sqlrated = "SELECT COUNT(DISTINCT r.cmid) FROM {local_datacurso_ratings} r
+                      WHERE r.tenant_id IN (:tenantid, :notenant)";
+        $ratedactivities = $DB->count_records_sql($sqlrated, $tenant);
 
         $sqlratings = "
             SELECT
                 SUM(CASE WHEN r.rating = 1 THEN 1 ELSE 0 END) AS likes,
                 SUM(CASE WHEN r.rating = 0 THEN 1 ELSE 0 END) AS dislikes
               FROM {local_datacurso_ratings} r
+             WHERE r.tenant_id IN (:tenantid, :notenant)
         ";
-        $stats = $DB->get_record_sql($sqlratings);
+        $stats = $DB->get_record_sql($sqlratings, $tenant);
         $likes = (int)($stats->likes ?? 0);
         $dislikes = (int)($stats->dislikes ?? 0);
 
@@ -93,13 +98,21 @@ class get_ai_analysis_global extends external_api {
         ];
 
         // 2. Call AI service (client).
-        $client = new ai_services_api();
+        $client = static::get_ai_client();
         $response = $client->request('POST', 'rating/general', $body);
 
         // 3. Return AI response.
         return [
             'analysis' => $response['reply'] ?? '',
         ];
+    }
+
+    /**
+     * Get the AI service client. Override in tests to inject a mock.
+     * @return ai_services_api
+     */
+    protected static function get_ai_client(): ai_services_api {
+        return new ai_services_api();
     }
 
     /**

@@ -16,16 +16,16 @@
 
 namespace local_datacurso_ratings\external;
 
-use external_api;
-use external_function_parameters;
-use external_value;
-use external_single_structure;
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_value;
+use core_external\external_single_structure;
 use context_module;
 use invalid_parameter_exception;
 
 defined('MOODLE_INTERNAL') || die();
 
-require_once($CFG->libdir . '/externallib.php');
+require_once(__DIR__ . '/../../courselib.php');
 
 /**
  * External function to save a rating for a course module.
@@ -45,7 +45,12 @@ class save_rating extends external_api {
         return new external_function_parameters([
             'cmid' => new external_value(PARAM_INT, 'Course module id'),
             'rating' => new external_value(PARAM_INT, 'Rating: 1 = like, 0 = dislike'),
-            'feedback' => new external_value(PARAM_RAW, 'Optional feedback for negative rating', VALUE_DEFAULT, ''),
+            'feedback' => new external_value(
+                PARAM_RAW,
+                'Optional feedback text (HTML is stripped server side)',
+                VALUE_DEFAULT,
+                ''
+            ),
         ]);
     }
 
@@ -54,8 +59,11 @@ class save_rating extends external_api {
      *
      * @param int $cmid Course module id
      * @param int $rating Rating value (0 or 1)
-     * @param string $feedback Optional feedback
+     * @param string $feedback Optional feedback (HTML tags are stripped server side)
      * @return array Status of the operation
+     * @throws \require_login_exception If the current user is a guest or cannot access the module
+     * @throws \required_capability_exception If the user lacks local/datacurso_ratings:rate
+     * @throws \moodle_exception If ratings are disabled or the module type is not supported
      * @throws invalid_parameter_exception If rating value is invalid
      */
     public static function execute(int $cmid, int $rating, string $feedback = ''): array {
@@ -73,6 +81,20 @@ class save_rating extends external_api {
         $context = context_module::instance($cm->id);
         self::validate_context($context);
 
+        // Guests may reach the module page but must never persist ratings.
+        if (isguestuser()) {
+            throw new \require_login_exception('Guests cannot rate');
+        }
+        require_capability('local/datacurso_ratings:rate', $context);
+
+        // Enforce the global and course-level switches server side, not only in the widget.
+        if (!local_datacurso_ratings_is_enabled_for_course((int)$cm->course)) {
+            throw new \moodle_exception('ratingsdisabled', 'local_datacurso_ratings');
+        }
+        if (!local_datacurso_ratings_is_module_supported($cm->modname)) {
+            throw new \moodle_exception('unsupportedmodule', 'local_datacurso_ratings');
+        }
+
         $r = (int)$params['rating'];
         if ($r !== 0 && $r !== 1) {
             throw new invalid_parameter_exception('Invalid rating value. Must be 0 or 1.');
@@ -89,7 +111,18 @@ class save_rating extends external_api {
             ['cmid' => $cm->id, 'userid' => $USER->id]
         );
 
-        $tenantid = \tool_tenant\tenancy::get_tenant_id($USER->id);
+        $tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id((int)$USER->id);
+
+        // The parameter is declared PARAM_RAW because validate_parameters() rejects values
+        // that change after cleaning; HTML is stripped here instead so plain text is stored.
+        $feedback = trim((string)$params['feedback']);
+        $feedback = trim(clean_param($feedback, PARAM_TEXT));
+
+        // The comment limit only governs free-text student input: predefined admin
+        // phrases have their own length validation and must be stored in full.
+        if ($feedback !== '' && !self::is_predefined_phrase($feedback)) {
+            $feedback = \core_text::substr($feedback, 0, local_datacurso_ratings_get_max_comment_length());
+        }
 
         $data = (object)[
             'cmid' => $cm->id,
@@ -97,7 +130,7 @@ class save_rating extends external_api {
             'courseid' => $courseid,
             'categoryid' => $categoryid,
             'rating' => $r,
-            'feedback' => (string)$params['feedback'],
+            'feedback' => $feedback,
             'tenant_id' => $tenantid,
             'timemodified' => $now,
         ];
@@ -111,6 +144,25 @@ class save_rating extends external_api {
         }
 
         return ['status' => true];
+    }
+
+    /**
+     * Check whether the given feedback text matches a predefined admin phrase.
+     *
+     * @param string $feedback Feedback text as received from the client
+     * @return bool
+     */
+    private static function is_predefined_phrase(string $feedback): bool {
+        global $DB;
+
+        // The phrases offered are those of the tenant of the user and the shared ones (tenant 0).
+        $compare = $DB->sql_compare_text('feedbacktext', 255) . ' = ' . $DB->sql_compare_text(':feedbacktext', 255)
+            . ' AND tenant_id IN (:tenantid, :notenant)';
+        return $DB->record_exists_select('local_datacurso_ratings_feedback', $compare, [
+            'feedbacktext' => $feedback,
+            'tenantid' => \local_datacurso_ratings\local\tenancy::get_tenant_id(),
+            'notenant' => \local_datacurso_ratings\local\tenancy::NO_TENANT,
+        ]);
     }
 
     /**

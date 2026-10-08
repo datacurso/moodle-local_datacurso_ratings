@@ -84,13 +84,21 @@
     </div>
 </div>
 
-<!-- AI analysis of comments -->
-<div class="mb-3 mt-3">
-    <button  
-        class="btn btn-outline-secondary btn-generate-ai-course" >
-        {{#str}} generatecommentaicourse, local_datacurso_ratings {{/str}} ✨
+<!-- Report actions -->
+<div class="mb-3 mt-3 d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div>
+        {{#can_generate_course_ai}}
+        <button
+            class="btn btn-outline-secondary btn-generate-ai-course">
+            {{#str}} generatecommentaicourse, local_datacurso_ratings {{/str}} ✨
+        </button>
+        {{/can_generate_course_ai}}
+        <div class="ai-analysis-result-course mt-2"></div>
+    </div>
+
+    <button type="button" class="btn btn-success" data-action="course-report-export-csv">
+        <i class="fa fa-download me-1"></i>{{#str}} exportcsv, local_datacurso_ratings {{/str}}
     </button>
-    <div class="ai-analysis-result-course mt-2"></div>
 </div>
 
 <!-- Ratings Table -->
@@ -177,7 +185,7 @@
     <h4 class="text-muted">{{#str}} nodataavailable, local_datacurso_ratings {{/str}}</h4>
     <p class="text-muted">{{#str}} nodatadescription, local_datacurso_ratings {{/str}}</p>
     <div class="mt-4">
-        <a href="#" class="btn btn-primary" onclick="location.reload()">
+        <a href="#" class="btn btn-primary" data-action="course-report-reload">
             <i class="fa fa-refresh"></i> {{#str}} refresh, local_datacurso_ratings {{/str}}
         </a>
     </div>

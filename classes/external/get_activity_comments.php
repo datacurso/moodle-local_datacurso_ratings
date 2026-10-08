@@ -16,15 +16,11 @@
 
 namespace local_datacurso_ratings\external;
 
-defined('MOODLE_INTERNAL') || die();
-
-require_once("$CFG->libdir/externallib.php");
-
-use external_function_parameters;
-use external_value;
-use external_single_structure;
-use external_multiple_structure;
-use external_api;
+use core_external\external_function_parameters;
+use core_external\external_value;
+use core_external\external_single_structure;
+use core_external\external_multiple_structure;
+use core_external\external_api;
 use context_module;
 
 /**
@@ -35,6 +31,12 @@ use context_module;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class get_activity_comments extends external_api {
+    /** @var int[] Page sizes accepted by this service; anything else falls back to DEFAULT_PAGE_SIZE. */
+    public const ALLOWED_PAGE_SIZES = [5, 10, 20, 25, 50, 100];
+
+    /** @var int Page size used when the requested value is not allowed. */
+    public const DEFAULT_PAGE_SIZE = 20;
+
     /**
      * Function input parameters.
      *
@@ -73,6 +75,13 @@ class get_activity_comments extends external_api {
         $context = context_module::instance($cm->id);
         self::validate_context($context);
         require_capability('local/datacurso_ratings:viewcoursereport', $context);
+
+        // Clamp pagination: an unbounded page size is a cheap DoS vector and a zero
+        // page size divides by zero when computing the total number of pages.
+        if (!in_array((int)$params['perpage'], self::ALLOWED_PAGE_SIZES, true)) {
+            $params['perpage'] = self::DEFAULT_PAGE_SIZE;
+        }
+        $params['page'] = max(0, (int)$params['page']);
 
         // Build the base query.
         $whereconditions = ['cmid = :cmid', 'feedback IS NOT NULL', "feedback != ''"];
@@ -123,7 +132,7 @@ class get_activity_comments extends external_api {
                 'total' => $totalcomments,
                 'page' => $params['page'],
                 'perpage' => $params['perpage'],
-                'totalpages' => ceil($totalcomments / $params['perpage']),
+                'totalpages' => (int)ceil($totalcomments / $params['perpage']),
                 'hasmore' => ($offset + $params['perpage']) < $totalcomments,
             ],
             'statistics' => $statistics,
@@ -132,6 +141,7 @@ class get_activity_comments extends external_api {
                 'name' => $cm->name,
                 'modname' => $cm->modname,
             ],
+            'can_generate_activity_ai' => has_capability('local/datacurso_ratings:generateanalysisactivity', $context),
         ];
     }
 
@@ -162,7 +172,7 @@ class get_activity_comments extends external_api {
             $wherestring,
             $sqlparams,
             '',
-            'feedback, rating'
+            'id, feedback, rating'
         );
 
         $totalcomments = count($allcomments);
@@ -282,6 +292,7 @@ class get_activity_comments extends external_api {
                 'name' => new external_value(PARAM_TEXT, 'Activity name'),
                 'modname' => new external_value(PARAM_TEXT, 'Module name'),
             ]),
+            'can_generate_activity_ai' => new external_value(PARAM_BOOL, 'Can generate AI analysis for activity comments'),
         ]);
     }
 }

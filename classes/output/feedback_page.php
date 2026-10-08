@@ -43,16 +43,23 @@ class feedback_page implements renderable, templatable {
      * Constructor.
      *
      * @param string $type Type of feedback to display.
-     * @param int $tenantid Tenant ID for multi-tenancy support.
+     * @param int|null $tenantid Tenant whose phrases are shown; defaults to the tenant of the current user.
      */
-    public function __construct(string $type, int $tenantid) {
+    public function __construct(string $type, ?int $tenantid = null) {
         global $DB;
         $this->type = $type;
+        $tenantid = $tenantid ?? \local_datacurso_ratings\local\tenancy::get_tenant_id();
 
-        // Fetch feedback items from the database.
-        $this->items = $DB->get_records(
+        // Fetch feedback items from the database: those of the tenant and the shared ones (tenant 0),
+        // which is where the phrases of a site that ran the plugin without tenancy remain.
+        $this->items = $DB->get_records_select(
             'local_datacurso_ratings_feedback',
-            ['type' => $this->type, 'tenant_id' => $tenantid],
+            'type = :type AND tenant_id IN (:tenantid, :notenant)',
+            [
+                'type' => $this->type,
+                'tenantid' => $tenantid,
+                'notenant' => \local_datacurso_ratings\local\tenancy::NO_TENANT,
+            ],
             'id DESC'
         );
     }
@@ -66,16 +73,17 @@ class feedback_page implements renderable, templatable {
     public function export_for_template(renderer_base $output) {
         $items = [];
         foreach ($this->items as $rec) {
+            // Export the raw phrase: Mustache escapes it on output, and the widget posts
+            // the value back verbatim so it must match the stored phrase exactly.
             $items[] = [
                 'id' => $rec->id,
-                'feedbacktext' => format_text($rec->feedbacktext, FORMAT_PLAIN),
+                'feedbacktext' => $rec->feedbacktext,
             ];
         }
 
         return [
             'items' => $items,
             'type' => $this->type,
-            'sesskey' => sesskey(),
         ];
     }
 }
