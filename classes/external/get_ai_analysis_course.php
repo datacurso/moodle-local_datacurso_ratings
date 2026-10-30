@@ -99,7 +99,7 @@ class get_ai_analysis_course extends external_api {
             }
 
             $total = $actlikes + $actdislikes;
-            $approvalpercent = $total > 0 ? round(($actlikes / $total) * 100, 2) : 0.0;
+            $approvalpercent = $total > 0 ? (int) round(($actlikes / $total) * 100) : 0;
 
             $activities[] = [
                 'like' => $actlikes,
@@ -111,7 +111,7 @@ class get_ai_analysis_course extends external_api {
 
         // Calculate overall approval percentage.
         $totalratings = $likes + $dislikes;
-        $approvalpercent = $totalratings > 0 ? round(($likes / $totalratings) * 100, 2) : 0.0;
+        $approvalpercent = $totalratings > 0 ? (int) round(($likes / $totalratings) * 100) : 0;
 
         // Body to send.
         $body = [
