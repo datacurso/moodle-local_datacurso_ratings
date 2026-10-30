@@ -107,8 +107,14 @@ function loadCommentsData(cmid, page = 0, search = '', modal) {
         }
     }])[0]
         .then((data) => {
+            // The web service page index is zero-based; the footer shows a one-based page number.
+            const pagination = {
+                ...data.pagination,
+                displaypage: data.pagination.page + 1
+            };
             return Templates.render('local_datacurso_ratings/comments_modal_content', {
                 ...data,
+                pagination,
                 searchterm: search
             });
         })
