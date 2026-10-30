@@ -85,7 +85,7 @@ class get_ai_analysis_comments extends external_api {
         }
 
         $total = count($records);
-        $approvalpercent = $total > 0 ? round(($likes / $total) * 100, 2) : 0.0;
+        $approvalpercent = $total > 0 ? (int) round(($likes / $total) * 100) : 0;
 
         // Body to send.
         $body = [
