@@ -2,6 +2,16 @@
 
 All notable changes to this plugin will be documented in this file.
 
+## [1.1.1] - 2026-10-30
+
+**Compatibility note:** This version is compatible from **Moodle 4.5** to **Moodle 5.3**.
+
+### Changed
+- `$plugin->supported` extended to `[405, 503]` for the Moodle 5.2 and 5.3 release lines. CI tests Moodle 4.5, 5.0, 5.1, 5.2 and 5.3
+
+### Fixed
+- The comments and course AI analyses send the approval percentages as whole numbers, so the Datacurso AI service no longer rejects them with HTTP 422 when the ratio is not a whole number (#15)
+
 ## [1.1.0]
 
 ### Security
