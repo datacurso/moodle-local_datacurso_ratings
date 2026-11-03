@@ -33,6 +33,10 @@
             "total": 10,
             "page": 0,
             "displaypage": 1,
+            "hasprevious": false,
+            "previouspage": -1,
+            "nextpage": 1,
+            "pages": [{"number": 0, "display": 1, "current": true}],
             "hasmore": false,
             "totalpages": 1
         },
@@ -153,25 +157,20 @@
     </div>
     <nav>
         <ul class="pagination pagination-sm mb-0">
-            {{#pagination.page}}
-            <li class="page-item {{^.}}disabled{{/.}}">
-                <a class="page-link comments-pagination" href="#" data-page="{{#.}}{{.}}{{/.}}{{^.}}0{{/.}}" data-page="0">
+            <li class="page-item {{^pagination.hasprevious}}disabled{{/pagination.hasprevious}}">
+                <a class="page-link comments-pagination" href="#" data-page="{{pagination.previouspage}}">
                     {{#str}} previous, local_datacurso_ratings {{/str}}
                 </a>
             </li>
-            {{/pagination.page}}
-            
-            <!-- Generate page numbers -->
-            {{#pagination.totalpages}}
-                {{#pages}}
-                <li class="page-item {{#current}}active{{/current}}">
-                    <a class="page-link comments-pagination" href="#" data-page="{{number}}">{{display}}</a>
-                </li>
-                {{/pages}}
-            {{/pagination.totalpages}}
-            
+
+            {{#pagination.pages}}
+            <li class="page-item {{#current}}active{{/current}}">
+                <a class="page-link comments-pagination" href="#" data-page="{{number}}">{{display}}</a>
+            </li>
+            {{/pagination.pages}}
+
             <li class="page-item {{^pagination.hasmore}}disabled{{/pagination.hasmore}}">
-                <a class="page-link comments-pagination" href="#" data-page="{{pagination.next_page}}">
+                <a class="page-link comments-pagination" href="#" data-page="{{pagination.nextpage}}">
                     {{#str}} next, local_datacurso_ratings {{/str}}
                 </a>
             </li>
