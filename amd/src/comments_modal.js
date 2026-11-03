@@ -76,6 +76,7 @@ async function openCommentsModal(cmid, activityName) {
         modal.show();
 
         loadCommentsData(cmid, 0, '', modal);
+        initModalClicks(cmid, modal);
 
         modal.getRoot().on(ModalEvents.hidden, function () {
             modal.destroy();
@@ -108,9 +109,18 @@ function loadCommentsData(cmid, page = 0, search = '', modal) {
     }])[0]
         .then((data) => {
             // The web service page index is zero-based; the footer shows a one-based page number.
+            const current = data.pagination.page;
+            const pages = [];
+            for (let number = 0; number < data.pagination.totalpages; number++) {
+                pages.push({number, display: number + 1, current: number === current});
+            }
             const pagination = {
                 ...data.pagination,
-                displaypage: data.pagination.page + 1
+                displaypage: current + 1,
+                hasprevious: current > 0,
+                previouspage: current - 1,
+                nextpage: current + 1,
+                pages
             };
             return Templates.render('local_datacurso_ratings/comments_modal_content', {
                 ...data,
@@ -129,7 +139,7 @@ function loadCommentsData(cmid, page = 0, search = '', modal) {
 }
 
 /**
- * Initialize modal features (search, pagination).
+ * Initialize the search features of the modal content.
  * @param {Number} cmid Course module ID.
  * @param {Object} modal Modal instance.
  */
@@ -157,16 +167,35 @@ function initModalFeatures(cmid, modal) {
         });
     }
 
-    modalBody.addEventListener('click', function (e) {
-        if (e.target.classList.contains('comments-pagination')) {
-            e.preventDefault();
-            const page = parseInt(e.target.getAttribute('data-page'));
-            const searchTerm = searchInput ? searchInput.value.trim() : '';
-            loadCommentsData(cmid, page, searchTerm, modal);
-        }
-    });
+}
+
+/**
+ * Handle the pagination and keyword clicks of the modal.
+ *
+ * The modal body element survives every page load, so the delegated listener is registered once per modal;
+ * registering it on every load stacked one extra web service call per page change.
+ *
+ * @param {Number} cmid Course module ID.
+ * @param {Object} modal Modal instance.
+ */
+function initModalClicks(cmid, modal) {
+    const modalBody = modal.getBody()[0];
 
     modalBody.addEventListener('click', function (e) {
+        const searchInput = modalBody.querySelector('#comments-search');
+
+        const pageLink = e.target.closest('.comments-pagination');
+        if (pageLink) {
+            e.preventDefault();
+            if (pageLink.closest('.page-item.disabled')) {
+                return;
+            }
+            const page = parseInt(pageLink.getAttribute('data-page'), 10);
+            const searchTerm = searchInput ? searchInput.value.trim() : '';
+            loadCommentsData(cmid, page, searchTerm, modal);
+            return;
+        }
+
         if (e.target.classList.contains('keyword-filter')) {
             e.preventDefault();
             const keyword = e.target.textContent.trim();
