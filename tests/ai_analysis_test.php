@@ -198,13 +198,58 @@ final class ai_analysis_test extends \externallib_advanced_testcase {
                 $this->equalTo('POST'),
                 $this->anything(),
                 $this->callback(function ($body) {
-                    return isset($body['approvalpercent']) && $body['approvalpercent'] === 75.0;
+                    return isset($body['approvalpercent']) && $body['approvalpercent'] === 75;
                 })
             )
             ->willReturn(['reply' => 'analysis']);
         testable_get_ai_analysis_comments::$mockclient = $mock;
 
         testable_get_ai_analysis_comments::execute($page->cmid);
+    }
+
+    /**
+     * Verify that a non-integer approval ratio is rounded to a whole number,
+     * because the AI service rejects decimal percentages with HTTP 422.
+     *
+     * Spec: MDL-INT-008 step 2.
+     */
+    public function test_comments_analysis_sends_whole_number_approval_percent(): void {
+        global $DB;
+        $this->resetAfterTest(true);
+
+        $course  = $this->getDataGenerator()->create_course();
+        $page    = $this->getDataGenerator()->create_module('page', ['course' => $course->id]);
+        $context = \context_module::instance($page->cmid);
+
+        $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
+        $this->setUser($user);
+        $roleid = $this->assignUserCapability('local/datacurso_ratings:viewcoursereport', $context->id);
+        $this->assignUserCapability('local/datacurso_ratings:generateanalysisactivity', $context->id, $roleid);
+
+        // Insert 2 likes and 1 dislike → 66.67 % approval.
+        foreach ([1, 1, 0] as $rating) {
+            $this->insert_rating($page->cmid, $course->id, $rating);
+        }
+
+        $capturedbody = null;
+        $mock = $this->createMock(ai_services_api::class);
+        $mock->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->anything(),
+                $this->anything(),
+                $this->callback(function ($body) use (&$capturedbody) {
+                    $capturedbody = $body;
+                    return true;
+                })
+            )
+            ->willReturn(['reply' => 'analysis']);
+        testable_get_ai_analysis_comments::$mockclient = $mock;
+
+        testable_get_ai_analysis_comments::execute($page->cmid);
+
+        $this->assertSame(67, $capturedbody['approvalpercent']);
     }
 
     /**
@@ -360,6 +405,73 @@ final class ai_analysis_test extends \externallib_advanced_testcase {
             $capturedbody['activities'],
             'Unrated activity must be excluded from the activities array sent to the AI.'
         );
+    }
+
+    /**
+     * Verify that the course and per-activity approval percentages are sent as
+     * whole numbers, because the AI service rejects decimals with HTTP 422.
+     *
+     * Spec: MDL-INT-009 step 2.
+     */
+    public function test_course_analysis_sends_whole_number_approval_percents(): void {
+        $this->resetAfterTest(true);
+
+        $course  = $this->getDataGenerator()->create_course();
+        $page    = $this->getDataGenerator()->create_module('page', ['course' => $course->id]);
+        $context = \context_course::instance($course->id);
+
+        $user = $this->getDataGenerator()->create_user();
+        $this->getDataGenerator()->enrol_user($user->id, $course->id, 'student');
+        $this->setUser($user);
+        $roleid = $this->assignUserCapability('local/datacurso_ratings:viewcoursereport', $context->id);
+        $this->assignUserCapability('local/datacurso_ratings:generateanalysiscourse', $context->id, $roleid);
+
+        // Insert 2 likes and 1 dislike → 66.67 % approval for the activity and the course.
+        foreach ([1, 1, 0] as $rating) {
+            $this->insert_rating($page->cmid, $course->id, $rating);
+        }
+
+        $capturedbody = null;
+        $mock = $this->createMock(ai_services_api::class);
+        $mock->expects($this->once())
+            ->method('request')
+            ->with(
+                $this->anything(),
+                $this->anything(),
+                $this->callback(function ($body) use (&$capturedbody) {
+                    $capturedbody = $body;
+                    return true;
+                })
+            )
+            ->willReturn(['reply' => 'analysis']);
+        testable_get_ai_analysis_course::$mockclient = $mock;
+
+        testable_get_ai_analysis_course::execute($course->id);
+
+        $this->assertSame(67, $capturedbody['approvalpercent']);
+        $this->assertSame(67, $capturedbody['activities'][0]['approvalpercent']);
+    }
+
+    /**
+     * Insert one rating from a new user.
+     *
+     * @param int $cmid Course module id.
+     * @param int $courseid Course id.
+     * @param int $rating 1 for like, 0 for dislike.
+     */
+    private function insert_rating(int $cmid, int $courseid, int $rating): void {
+        global $DB;
+        $rater = $this->getDataGenerator()->create_user();
+        $DB->insert_record('local_datacurso_ratings', [
+            'userid'       => $rater->id,
+            'cmid'         => $cmid,
+            'courseid'     => $courseid,
+            'categoryid'   => 0,
+            'rating'       => $rating,
+            'feedback'     => 'feedback ' . $rater->id,
+            'timecreated'  => time(),
+            'timemodified' => time(),
+        ]);
     }
 
     // MDL-INT-010 — Global platform AI analysis.
