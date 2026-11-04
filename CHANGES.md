@@ -2,6 +2,16 @@
 
 All notable changes to this plugin will be documented in this file.
 
+## [1.1.1-wp] - 2026-11-04
+
+**Compatibility note:** This version is compatible only with **Moodle Workplace 4.5**.
+
+### Fixed
+- The comments and course AI analyses send the approval percentages as whole numbers, so the Datacurso AI service no longer rejects them with HTTP 422 when the ratio is not a whole number (#15)
+- The title of the comments modal on the course ratings report shows the activity name again (#17)
+- The footer of the comments modal shows the current page number instead of an empty value (#18)
+- The Previous, Next and page number links of the comments modal work when there are more than 20 comments, and a page change no longer triggers duplicate web service calls (#19)
+
 ## [1.1.0-wp] - 2026-10-07
 
 **Compatibility note:** This version is compatible only with **Moodle Workplace 4.5**.
