@@ -48,7 +48,7 @@ final class save_rating_test extends \externallib_advanced_testcase {
         $generator = $this->getDataGenerator();
 
         // The external function enforces the global switch server side.
-        set_config('enabled', 1, 'local_datacurso_ratings');
+        \aiprovider_datacurso\local\plugin_settings::set_enabled('local_datacurso_ratings', true);
 
         $category = $generator->create_category();
         $course   = $generator->create_course(['category' => $category->id]);
@@ -377,7 +377,7 @@ final class save_rating_test extends \externallib_advanced_testcase {
         $this->resetAfterTest(true);
 
         [$course, $quiz, $student] = $this->create_course_with_quiz_and_student();
-        set_config('enabled', 0, 'local_datacurso_ratings');
+        \aiprovider_datacurso\local\plugin_settings::set_enabled('local_datacurso_ratings', false);
         $this->setUser($student);
 
         $this->assert_execute_fails_with_errorcode($quiz->cmid, 'ratingsdisabled');

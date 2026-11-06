@@ -23,6 +23,8 @@
  * @license     https://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use aiprovider_datacurso\local\plugin_settings;
+
 defined('MOODLE_INTERNAL') || die();
 
 if ($hassiteconfig) {
@@ -39,27 +41,21 @@ if ($hassiteconfig) {
         'moodle/site:config'
     ));
 
-    // Link report general ratings.
-    $ADMIN->add('local_datacurso_ratings_category', new admin_externalpage(
-        'local_datacurso_ratings_report',
-        get_string('ratingsreport', 'local_datacurso_ratings'),
-        new moodle_url('/local/datacurso_ratings/admin/report.php'),
-        'moodle/site:config'
-    ));
+    // Link report general ratings, only while the Datacurso AI provider keeps the plugin enabled.
+    if (plugin_settings::is_enabled('local_datacurso_ratings')) {
+        $ADMIN->add('local_datacurso_ratings_category', new admin_externalpage(
+            'local_datacurso_ratings_report',
+            get_string('ratingsreport', 'local_datacurso_ratings'),
+            new moodle_url('/local/datacurso_ratings/admin/report.php'),
+            'moodle/site:config'
+        ));
+    }
 
     // New page of general settings.
     $settingspage = new admin_settingpage(
         'local_datacurso_ratings_settings',
         get_string('generalsettings', 'local_datacurso_ratings')
     );
-
-    // Checkbox: enabled plugin default in all courses.
-    $settingspage->add(new admin_setting_configcheckbox(
-        'local_datacurso_ratings/enabled',
-        get_string('enableplugin', 'local_datacurso_ratings'),
-        get_string('enableplugin_desc', 'local_datacurso_ratings'),
-        1
-    ));
 
     // Max character length for student comments.
     $settingspage->add(new admin_setting_configtext(

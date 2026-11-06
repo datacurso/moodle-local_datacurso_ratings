@@ -41,7 +41,7 @@ require_once($CFG->dirroot . '/local/datacurso_ratings/courselib.php');
  */
 final class courselib_test extends \advanced_testcase {
     /**
-     * Verify that the plugin is considered enabled when the global config is active
+     * Verify that the plugin is considered enabled when the Datacurso AI provider keeps the plugin enabled
      * and no course-level record exists.
      *
      * Spec: MDL-INT-001 step 1.
@@ -49,14 +49,13 @@ final class courselib_test extends \advanced_testcase {
     public function test_plugin_is_enabled_when_global_on_and_no_course_record(): void {
         $this->resetAfterTest(true);
 
-        set_config('enabled', 1, 'local_datacurso_ratings');
         $course = $this->getDataGenerator()->create_course();
 
         $this->assertTrue(local_datacurso_ratings_is_enabled_for_course($course->id));
     }
 
     /**
-     * Verify that a disabled global config overrides any course-level config,
+     * Verify that the plugin disabled in the Datacurso AI provider overrides any course-level config,
      * resulting in the plugin being disabled regardless of course settings.
      *
      * Spec: MDL-INT-001 step 2.
@@ -64,7 +63,7 @@ final class courselib_test extends \advanced_testcase {
     public function test_global_disabled_prevails_over_course_config(): void {
         $this->resetAfterTest(true);
 
-        set_config('enabled', 0, 'local_datacurso_ratings');
+        \aiprovider_datacurso\local\plugin_settings::set_enabled('local_datacurso_ratings', false);
         $course = $this->getDataGenerator()->create_course();
 
         // Even if we insert a course-level enabled record, global off must win.
@@ -75,14 +74,13 @@ final class courselib_test extends \advanced_testcase {
 
     /**
      * Verify that a course-level record with enabled=false disables the plugin
-     * for that specific course even when the global config is active.
+     * for that specific course even when the Datacurso AI provider keeps the plugin enabled.
      *
      * Spec: MDL-INT-001 step 3.
      */
     public function test_course_record_disabled_disables_plugin_for_that_course(): void {
         $this->resetAfterTest(true);
 
-        set_config('enabled', 1, 'local_datacurso_ratings');
         $course = $this->getDataGenerator()->create_course();
 
         local_datacurso_ratings_set_course_enabled($course->id, false);

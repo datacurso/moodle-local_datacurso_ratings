@@ -69,14 +69,12 @@ final class hook_callbacks_test extends \advanced_testcase {
 
     /**
      * Verify that the widget is injected for an authenticated non-guest enrolled student
-     * when the plugin is enabled globally and for the course.
+     * when the plugin is enabled in the Datacurso AI provider and for the course.
      *
      * Spec: MDL-INT-011 step 1.
      */
     public function test_widget_appears_for_authenticated_enrolled_student(): void {
         $this->resetAfterTest(true);
-
-        set_config('enabled', 1, 'local_datacurso_ratings');
 
         $course  = $this->getDataGenerator()->create_course();
         $student = $this->getDataGenerator()->create_user();
@@ -104,8 +102,6 @@ final class hook_callbacks_test extends \advanced_testcase {
      */
     public function test_widget_absent_on_edit_pages(): void {
         $this->resetAfterTest(true);
-
-        set_config('enabled', 1, 'local_datacurso_ratings');
 
         $course  = $this->getDataGenerator()->create_course();
         $student = $this->getDataGenerator()->create_user();
@@ -135,14 +131,14 @@ final class hook_callbacks_test extends \advanced_testcase {
     }
 
     /**
-     * Verify that the widget is NOT injected when the plugin is globally disabled.
+     * Verify that the widget is NOT injected when the plugin is disabled in the Datacurso AI provider.
      *
      * Spec: MDL-INT-011 step 3.
      */
     public function test_widget_absent_when_globally_disabled(): void {
         $this->resetAfterTest(true);
 
-        set_config('enabled', 0, 'local_datacurso_ratings');
+        \aiprovider_datacurso\local\plugin_settings::set_enabled('local_datacurso_ratings', false);
 
         $course  = $this->getDataGenerator()->create_course();
         $student = $this->getDataGenerator()->create_user();
@@ -168,8 +164,6 @@ final class hook_callbacks_test extends \advanced_testcase {
      */
     public function test_widget_absent_for_unsupported_module_types(): void {
         $this->resetAfterTest(true);
-
-        set_config('enabled', 1, 'local_datacurso_ratings');
 
         $course  = $this->getDataGenerator()->create_course();
         $student = $this->getDataGenerator()->create_user();
@@ -202,8 +196,6 @@ final class hook_callbacks_test extends \advanced_testcase {
     public function test_widget_absent_for_guest_user(): void {
         $this->resetAfterTest(true);
 
-        set_config('enabled', 1, 'local_datacurso_ratings');
-
         $course = $this->getDataGenerator()->create_course();
         $page   = $this->getDataGenerator()->create_module('page', ['course' => $course->id]);
         $cm     = get_coursemodule_from_instance('page', $page->id, $course->id);
@@ -226,8 +218,6 @@ final class hook_callbacks_test extends \advanced_testcase {
      */
     public function test_widget_absent_when_course_disabled(): void {
         $this->resetAfterTest(true);
-
-        set_config('enabled', 1, 'local_datacurso_ratings');
 
         $course  = $this->getDataGenerator()->create_course();
         $student = $this->getDataGenerator()->create_user();
@@ -258,8 +248,6 @@ final class hook_callbacks_test extends \advanced_testcase {
      */
     public function test_course_form_includes_plugin_section_when_globally_enabled(): void {
         $this->resetAfterTest(true);
-
-        set_config('enabled', 1, 'local_datacurso_ratings');
 
         $course = $this->getDataGenerator()->create_course();
         $this->setAdminUser();
@@ -293,8 +281,6 @@ final class hook_callbacks_test extends \advanced_testcase {
      */
     public function test_course_form_default_is_enabled_when_no_prior_config(): void {
         $this->resetAfterTest(true);
-
-        set_config('enabled', 1, 'local_datacurso_ratings');
 
         $course = $this->getDataGenerator()->create_course();
         $this->setAdminUser();
@@ -332,8 +318,6 @@ final class hook_callbacks_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest(true);
 
-        set_config('enabled', 1, 'local_datacurso_ratings');
-
         $course = $this->getDataGenerator()->create_course();
         $this->setAdminUser();
 
@@ -358,7 +342,7 @@ final class hook_callbacks_test extends \advanced_testcase {
     }
 
     /**
-     * Verify that submitting the course form does NOT persist config when the plugin is globally disabled.
+     * Verify that submitting the course form does NOT persist config when the plugin is disabled in the Datacurso AI provider.
      *
      * Spec: MDL-INT-012 step 4.
      */
@@ -366,7 +350,7 @@ final class hook_callbacks_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest(true);
 
-        set_config('enabled', 0, 'local_datacurso_ratings');
+        \aiprovider_datacurso\local\plugin_settings::set_enabled('local_datacurso_ratings', false);
 
         $course = $this->getDataGenerator()->create_course();
         $this->setAdminUser();
@@ -382,7 +366,7 @@ final class hook_callbacks_test extends \advanced_testcase {
         \local_datacurso_ratings\hook\course_form_hook::after_form_submission($hook);
 
         $exists = $DB->record_exists('local_datacurso_ratings_course_settings', ['courseid' => $course->id]);
-        $this->assertFalse($exists, 'No course config must be saved when the plugin is globally disabled.');
+        $this->assertFalse($exists, 'No course config must be saved when the plugin is disabled in the Datacurso AI provider.');
     }
 
     /**
@@ -393,7 +377,7 @@ final class hook_callbacks_test extends \advanced_testcase {
         global $DB;
         $this->resetAfterTest(true);
 
-        set_config('enabled', 1, 'local_datacurso_ratings');
+        \aiprovider_datacurso\local\plugin_settings::set_enabled('local_datacurso_ratings', true);
 
         $course  = $this->getDataGenerator()->create_course();
         $student = $this->getDataGenerator()->create_user();

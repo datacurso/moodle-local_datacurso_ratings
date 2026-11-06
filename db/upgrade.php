@@ -124,5 +124,13 @@ function xmldb_local_datacurso_ratings_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026092401, 'local', 'datacurso_ratings');
     }
 
+    if ($oldversion < 2026110500) {
+        // The "Enabled" switch moved to the Datacurso AI provider, whose upgrade already copied
+        // the value of this setting, so the plugin only removes its own copy.
+        unset_config('enabled', 'local_datacurso_ratings');
+
+        upgrade_plugin_savepoint(true, 2026110500, 'local', 'datacurso_ratings');
+    }
+
     return true;
 }
