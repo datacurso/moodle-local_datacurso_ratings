@@ -61,12 +61,7 @@ class hook_callbacks {
             return;
         }
 
-        // Check if plugin is enabled globally.
-        if (!get_config('local_datacurso_ratings', 'enabled')) {
-            return;
-        }
-
-        // Check if plugin is enabled for this specific course.
+        // Check if the plugin is enabled in the Datacurso AI provider and for this specific course.
         if (!local_datacurso_ratings_is_enabled_for_course($cm->course)) {
             return;
         }

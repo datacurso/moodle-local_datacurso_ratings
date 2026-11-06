@@ -33,7 +33,12 @@ use core_privacy\local\request\approved_userlist;
 use core_privacy\local\request\transform;
 use core_privacy\local\request\userlist;
 use core_privacy\local\request\writer;
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
 use local_datacurso_ratings\privacy\provider;
+
+defined('MOODLE_INTERNAL') || die();
+
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 /**
  * Tests for GDPR compliance: metadata, context discovery, export, and selective deletes (INT-015).
@@ -44,6 +49,8 @@ use local_datacurso_ratings\privacy\provider;
  * @covers \local_datacurso_ratings\privacy\provider
  */
 final class privacy_provider_test extends \core_privacy\tests\provider_testcase {
+    use provider_dependency_trait;
+
     /**
      * Insert a rating record directly for the given user and course module.
      *
@@ -146,6 +153,7 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
      * The contexts for a user are exactly the module contexts of the course modules the user rated.
      */
     public function test_get_contexts_for_userid_returns_only_rated_module_contexts(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
         ['page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] = $this->create_fixture();
         $nobody = $this->getDataGenerator()->create_user();
@@ -175,6 +183,7 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
      * A module context lists only the users who rated that module; other context levels list nobody.
      */
     public function test_get_users_in_context_returns_only_raters_of_that_module(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
         ['course' => $course, 'page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] =
             $this->create_fixture();
@@ -210,6 +219,7 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
      * Export writes only the rating of the approved module context, in a human readable form.
      */
     public function test_export_user_data_exports_only_approved_module_context(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
         ['page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] = $this->create_fixture();
         $created = 1700000000;
@@ -250,6 +260,7 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
      * A dislike is exported with its readable label.
      */
     public function test_export_user_data_exports_dislike_label(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
         ['forum' => $forum, 'student1' => $student1] = $this->create_fixture();
         $this->insert_rating($student1->id, $forum, 0, 'Too long', time());
@@ -266,6 +277,7 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
      */
     public function test_delete_data_for_all_users_in_context_deletes_only_that_module(): void {
         global $DB;
+        $this->require_provider();
         $this->resetAfterTest(true);
         ['course' => $course, 'page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] =
             $this->create_fixture();
@@ -291,6 +303,7 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
      */
     public function test_delete_data_for_user_deletes_only_approved_contexts(): void {
         global $DB;
+        $this->require_provider();
         $this->resetAfterTest(true);
         ['page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] = $this->create_fixture();
         $now = time();
@@ -318,6 +331,7 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
      */
     public function test_delete_data_for_users_deletes_only_listed_users_in_module(): void {
         global $DB;
+        $this->require_provider();
         $this->resetAfterTest(true);
         ['course' => $course, 'page' => $page, 'forum' => $forum, 'student1' => $student1, 'student2' => $student2] =
             $this->create_fixture();
@@ -345,6 +359,7 @@ final class privacy_provider_test extends \core_privacy\tests\provider_testcase 
      */
     public function test_privacy_deletes_preserve_feedback_phrases(): void {
         global $DB;
+        $this->require_provider();
         $this->resetAfterTest(true);
         ['page' => $page, 'student1' => $student1, 'student2' => $student2] = $this->create_fixture();
         $now = time();

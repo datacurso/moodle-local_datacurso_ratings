@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use aiprovider_datacurso\local\plugin_settings;
+
 require_once('../../../config.php');
 
 // Get course ID parameter.
@@ -32,6 +34,7 @@ $course = $DB->get_record('course', ['id' => $courseid], '*', MUST_EXIST);
 
 // Security checks.
 require_login($course);
+plugin_settings::require_enabled('local_datacurso_ratings');
 $context = context_course::instance($course->id);
 require_capability('local/datacurso_ratings:viewcoursereport', $context);
 

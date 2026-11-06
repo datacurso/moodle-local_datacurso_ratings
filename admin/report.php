@@ -22,9 +22,12 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use aiprovider_datacurso\local\plugin_settings;
+
 require(__DIR__ . '/../../../config.php');
 
 require_login();
+plugin_settings::require_enabled('local_datacurso_ratings');
 $context = context_system::instance();
 require_capability('moodle/site:config', $context);
 

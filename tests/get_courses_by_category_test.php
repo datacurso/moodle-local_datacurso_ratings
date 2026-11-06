@@ -28,8 +28,10 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once(__DIR__ . '/external_testcase.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 use local_datacurso_ratings\external\get_courses_by_category;
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
 
 /**
  * Test suite for the get_courses_by_category web service.
@@ -37,6 +39,16 @@ use local_datacurso_ratings\external\get_courses_by_category;
  * @covers \local_datacurso_ratings\external\get_courses_by_category
  */
 final class get_courses_by_category_test extends \externallib_advanced_testcase {
+    use provider_dependency_trait;
+
+    /**
+     * Skip every test of this class when the Datacurso AI provider is not installed.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->require_provider();
+    }
+
     /**
      * Courses in a category are listed and the site course (ID 1) is never included.
      *
