@@ -25,10 +25,13 @@
 
 namespace local_datacurso_ratings;
 
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/local/datacurso_ratings/lib.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 /**
  * Tests for the course navigation report link (INT-016).
@@ -36,6 +39,16 @@ require_once($CFG->dirroot . '/local/datacurso_ratings/lib.php');
  * @covers ::local_datacurso_ratings_extend_navigation_course
  */
 final class navigation_test extends \advanced_testcase {
+    use provider_dependency_trait;
+
+    /**
+     * Skip every test of this class when the Datacurso AI provider is not installed.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->require_provider();
+    }
+
     /**
      * Build a minimal navigation node tree that simulates the course navigation
      * with a "coursereports" child node.

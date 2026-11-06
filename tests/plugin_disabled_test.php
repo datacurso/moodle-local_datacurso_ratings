@@ -20,6 +20,7 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once(__DIR__ . '/external_testcase.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 require_once($CFG->dirroot . '/local/datacurso_ratings/lib.php');
 require_once($CFG->libdir . '/adminlib.php');
 
@@ -31,6 +32,7 @@ use local_datacurso_ratings\external\get_ai_analysis_global;
 use local_datacurso_ratings\external\get_courses_by_category;
 use local_datacurso_ratings\external\get_ratings_report;
 use local_datacurso_ratings\external\get_ratings_report_course;
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
 use local_datacurso_ratings\task\update_recommendations_cache;
 
 /**
@@ -51,6 +53,16 @@ use local_datacurso_ratings\task\update_recommendations_cache;
  * @covers     ::local_datacurso_ratings_extend_navigation_course
  */
 final class plugin_disabled_test extends \externallib_advanced_testcase {
+    use provider_dependency_trait;
+
+    /**
+     * Skip every test of this class when the Datacurso AI provider is not installed.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->require_provider();
+    }
+
     /**
      * Each guarded web service with arguments that pass parameter validation.
      *

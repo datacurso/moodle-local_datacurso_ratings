@@ -25,12 +25,15 @@
 
 namespace local_datacurso_ratings;
 
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/local/datacurso_ratings/courselib.php');
 require_once($CFG->dirroot . '/course/edit_form.php');
 require_once($CFG->dirroot . '/course/tests/fixtures/testable_course_edit_form.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 /**
  * Tests for widget visibility guards (INT-011) and course form hook (INT-012).
@@ -39,6 +42,16 @@ require_once($CFG->dirroot . '/course/tests/fixtures/testable_course_edit_form.p
  * @covers \local_datacurso_ratings\hook\course_form_hook
  */
 final class hook_callbacks_test extends \advanced_testcase {
+    use provider_dependency_trait;
+
+    /**
+     * Skip every test of this class when the Datacurso AI provider is not installed.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->require_provider();
+    }
+
     /**
      * Configure PAGE context and globals to simulate a module page for a supported module.
      *

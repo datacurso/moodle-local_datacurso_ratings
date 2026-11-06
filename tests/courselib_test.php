@@ -25,10 +25,13 @@
 
 namespace local_datacurso_ratings;
 
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/local/datacurso_ratings/courselib.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 /**
  * Unit tests for course-level plugin configuration helpers.
@@ -40,6 +43,8 @@ require_once($CFG->dirroot . '/local/datacurso_ratings/courselib.php');
  * @covers ::local_datacurso_ratings_is_module_supported
  */
 final class courselib_test extends \advanced_testcase {
+    use provider_dependency_trait;
+
     /**
      * Verify that the plugin is considered enabled when the Datacurso AI provider keeps the plugin enabled
      * and no course-level record exists.
@@ -47,6 +52,7 @@ final class courselib_test extends \advanced_testcase {
      * Spec: MDL-INT-001 step 1.
      */
     public function test_plugin_is_enabled_when_global_on_and_no_course_record(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
 
         $course = $this->getDataGenerator()->create_course();
@@ -61,6 +67,7 @@ final class courselib_test extends \advanced_testcase {
      * Spec: MDL-INT-001 step 2.
      */
     public function test_global_disabled_prevails_over_course_config(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
 
         \aiprovider_datacurso\local\plugin_settings::set_enabled('local_datacurso_ratings', false);
@@ -79,6 +86,7 @@ final class courselib_test extends \advanced_testcase {
      * Spec: MDL-INT-001 step 3.
      */
     public function test_course_record_disabled_disables_plugin_for_that_course(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
 
         $course = $this->getDataGenerator()->create_course();
@@ -96,6 +104,7 @@ final class courselib_test extends \advanced_testcase {
      */
     public function test_insert_and_update_course_config(): void {
         global $DB;
+        $this->require_provider();
         $this->resetAfterTest(true);
 
         $course = $this->getDataGenerator()->create_course();
@@ -122,6 +131,7 @@ final class courselib_test extends \advanced_testcase {
      * Spec: MDL-INT-001 step 5.
      */
     public function test_get_course_enabled_returns_null_when_no_record(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
 
         $course = $this->getDataGenerator()->create_course();

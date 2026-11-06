@@ -25,10 +25,13 @@
 
 namespace local_datacurso_ratings;
 
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once(__DIR__ . '/external_testcase.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 require_once($CFG->dirroot . '/local/datacurso_ratings/courselib.php');
 
 /**
@@ -37,6 +40,16 @@ require_once($CFG->dirroot . '/local/datacurso_ratings/courselib.php');
  * @covers \local_datacurso_ratings\external\save_rating
  */
 final class save_rating_test extends \externallib_advanced_testcase {
+    use provider_dependency_trait;
+
+    /**
+     * Skip every test of this class when the Datacurso AI provider is not installed.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->require_provider();
+    }
+
     /**
      * Provide the scenario fixture shared across test methods.
      *

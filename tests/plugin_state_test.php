@@ -17,7 +17,12 @@
 namespace local_datacurso_ratings;
 
 use aiprovider_datacurso\local\plugin_settings;
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
 use local_datacurso_ratings\hook\course_form_hook;
+
+defined('MOODLE_INTERNAL') || die();
+
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 /**
  * Tests that the plugin state comes from the Datacurso AI provider instead of the plugin's own setting.
@@ -30,6 +35,8 @@ use local_datacurso_ratings\hook\course_form_hook;
  * @covers     \local_datacurso_ratings\hook_callbacks
  */
 final class plugin_state_test extends \advanced_testcase {
+    use provider_dependency_trait;
+
     /**
      * Load the plugin library, the course form fixtures and the upgrade code under test.
      *
@@ -112,6 +119,7 @@ final class plugin_state_test extends \advanced_testcase {
      * @return void
      */
     public function test_course_is_enabled_when_enabled_in_provider(): void {
+        $this->require_provider();
         $this->resetAfterTest();
         set_config('enabled', '0', 'local_datacurso_ratings');
         $course = $this->getDataGenerator()->create_course();
@@ -126,6 +134,7 @@ final class plugin_state_test extends \advanced_testcase {
      * @return void
      */
     public function test_course_is_disabled_when_disabled_in_provider(): void {
+        $this->require_provider();
         $this->resetAfterTest();
         plugin_settings::set_enabled('local_datacurso_ratings', false);
         $course = $this->getDataGenerator()->create_course();
@@ -140,6 +149,7 @@ final class plugin_state_test extends \advanced_testcase {
      * @return void
      */
     public function test_widget_is_injected_when_enabled_in_provider(): void {
+        $this->require_provider();
         $this->resetAfterTest();
         set_config('enabled', '0', 'local_datacurso_ratings');
 
@@ -152,6 +162,7 @@ final class plugin_state_test extends \advanced_testcase {
      * @return void
      */
     public function test_course_form_has_plugin_section_when_enabled_in_provider(): void {
+        $this->require_provider();
         $this->resetAfterTest();
         set_config('enabled', '0', 'local_datacurso_ratings');
 
@@ -164,6 +175,7 @@ final class plugin_state_test extends \advanced_testcase {
      * @return void
      */
     public function test_course_form_has_no_plugin_section_when_disabled_in_provider(): void {
+        $this->require_provider();
         $this->resetAfterTest();
         plugin_settings::set_enabled('local_datacurso_ratings', false);
 
@@ -176,6 +188,7 @@ final class plugin_state_test extends \advanced_testcase {
      * @return void
      */
     public function test_settings_page_has_no_enabled_setting(): void {
+        $this->require_provider();
         $this->resetAfterTest();
         $this->setAdminUser();
 
