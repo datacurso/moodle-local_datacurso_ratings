@@ -41,8 +41,8 @@ if ($hassiteconfig) {
         'moodle/site:config'
     ));
 
-    // Link report general ratings, only while the Datacurso AI provider keeps the plugin enabled.
-    if (plugin_settings::is_enabled('local_datacurso_ratings')) {
+    // Link report general ratings, only while the Datacurso AI provider is installed and keeps the plugin enabled.
+    if (class_exists(plugin_settings::class) && plugin_settings::is_enabled('local_datacurso_ratings')) {
         $ADMIN->add('local_datacurso_ratings_category', new admin_externalpage(
             'local_datacurso_ratings_report',
             get_string('ratingsreport', 'local_datacurso_ratings'),
