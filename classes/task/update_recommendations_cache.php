@@ -16,6 +16,8 @@
 
 namespace local_datacurso_ratings\task;
 
+use aiprovider_datacurso\local\plugin_settings;
+
 /**
  * Scheduled task to refresh recommendations cache.
  *
@@ -35,6 +37,10 @@ class update_recommendations_cache extends \core\task\scheduled_task {
 
     /**
      * Execute the scheduled task.
+     *
+     * The plugin is switched on or off per tenant in the Datacurso AI provider. The users of a tenant
+     * that has it off are skipped (no recommendations are cached for them) instead of throwing, so the
+     * task is not retried.
      */
     public function execute() {
         global $DB;
@@ -46,7 +52,8 @@ class update_recommendations_cache extends \core\task\scheduled_task {
         // Clear previous cache.
         $cache->purge();
 
-        // The fallback ratio is the same for every user of a tenant: compute it once per tenant.
+        // The plugin state and the fallback ratio are the same for every user of a tenant: get them once per tenant.
+        $enabled = [];
         $ratios = [];
 
         // Stream active users (ids only) instead of loading every user record into memory.
@@ -57,6 +64,18 @@ class update_recommendations_cache extends \core\task\scheduled_task {
             foreach ($users as $user) {
                 $userid = (int)$user->id;
                 $tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id($userid);
+
+                // There is no current user in cron: ask the provider for the tenant of each user.
+                if (!isset($enabled[$tenantid])) {
+                    $enabled[$tenantid] = plugin_settings::is_enabled('local_datacurso_ratings', $tenantid);
+                    if (!$enabled[$tenantid]) {
+                        mtrace(get_string('task_skipped_tenantdisabled', 'local_datacurso_ratings', $tenantid));
+                    }
+                }
+                if (!$enabled[$tenantid]) {
+                    continue;
+                }
+
                 $ratios[$tenantid] ??= \local_datacurso_ratings\recommendations\service::get_global_ratio($tenantid);
 
                 // Get recommendations.

@@ -2,6 +2,16 @@
 
 All notable changes to this plugin will be documented in this file.
 
+## [1.1.2-wp] - 2026-11-09
+
+**Compatibility note:** This version is compatible only with **Moodle Workplace 4.5**.
+
+### Changed
+- The plugin follows its state in the Datacurso AI provider (Site administration > AI > Datacurso plugins list), which switches it on or off per tenant. The plugin no longer has an "Enabled" switch of its own: the site setting `enabled` and the tenant settings page (`admin/setting_tenant.php`) are removed. While the plugin is disabled for a tenant, its users get the provider message on the report pages and their web services, do not see the rating widget or the course settings section, cannot rate, and do not see the course and admin report links; the AI analysis buttons of the reports show the provider message as a Moodle notification. The recommendations task skips the users of every tenant that has the plugin disabled and logs `task_skipped_tenantdisabled` for each of them.
+- Upgrade (2026110902): the old switch values are copied into the provider before they are deleted. The value each tenant had saved becomes the provider value of that tenant, and the site value becomes the provider site default, so tenants that never saved their own keep following it. A value the provider already has for a tenant (or for the site) is never overwritten, except that a disabled old site value always wins over the provider site value: that value may only have been seeded (enabled) by the provider's own upgrade, so the plugin no longer turns back on after an administrator had switched it off (RATINGS-MIG-001).
+- The strings `enableplugin`, `enableplugin_desc`, `enableforcourse_desc` and `task_skipped_plugindisabled` are removed, `task_skipped_tenantdisabled` is added, and `enableforcourse_help` no longer mentions a global switch.
+- Requires `aiprovider_datacurso` 2026110901.
+
 ## [1.1.1-wp] - 2026-11-04
 
 **Compatibility note:** This version is compatible only with **Moodle Workplace 4.5**.

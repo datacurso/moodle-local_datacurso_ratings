@@ -16,6 +16,7 @@
 
 namespace local_datacurso_ratings\external;
 
+use aiprovider_datacurso\local\plugin_settings;
 use core_external\external_function_parameters;
 use core_external\external_value;
 use core_external\external_single_structure;
@@ -69,6 +70,7 @@ class get_activity_comments extends external_api {
             'perpage' => $perpage,
             'search' => $search,
         ]);
+        plugin_settings::require_enabled('local_datacurso_ratings');
 
         // Validate module context.
         $cm = get_coursemodule_from_id('', $params['cmid'], 0, false, MUST_EXIST);

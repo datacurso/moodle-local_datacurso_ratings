@@ -61,13 +61,7 @@ class hook_callbacks {
             return;
         }
 
-        // Ratings must be on for the tenant of the user (the site setting without tenancy).
-        $tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id((int)$USER->id);
-        if (!\local_datacurso_ratings\local\tenancy::is_enabled($tenantid)) {
-            return;
-        }
-
-        // Check if plugin is enabled for this specific course.
+        // Check if the plugin is enabled for the tenant of the user (Datacurso AI provider) and this specific course.
         if (!local_datacurso_ratings_is_enabled_for_course($cm->course)) {
             return;
         }
@@ -95,6 +89,7 @@ class hook_callbacks {
             return;
         }
 
+        $tenantid = \local_datacurso_ratings\local\tenancy::get_tenant_id((int)$USER->id);
         $feedbackpagelike = new \local_datacurso_ratings\output\feedback_page('like', $tenantid);
         $feedbackpagedislike = new \local_datacurso_ratings\output\feedback_page('dislike', $tenantid);
 

@@ -16,6 +16,7 @@
 
 namespace local_datacurso_ratings\external;
 
+use aiprovider_datacurso\local\plugin_settings;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
@@ -45,6 +46,7 @@ class get_ai_analysis_global extends external_api {
         global $DB, $USER;
 
         $params = self::validate_parameters(self::execute_parameters(), []);
+        plugin_settings::require_enabled('local_datacurso_ratings');
 
         // Context validation.
         $context = context_system::instance();

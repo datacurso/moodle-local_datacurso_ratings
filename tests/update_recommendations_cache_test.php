@@ -25,10 +25,13 @@
 
 namespace local_datacurso_ratings;
 
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once(__DIR__ . '/external_testcase.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 /**
  * Tests for the scheduled task that rebuilds the recommendations cache (INT-014).
@@ -36,6 +39,16 @@ require_once(__DIR__ . '/external_testcase.php');
  * @covers \local_datacurso_ratings\task\update_recommendations_cache
  */
 final class update_recommendations_cache_test extends \externallib_advanced_testcase {
+    use provider_dependency_trait;
+
+    /**
+     * Skip every test of this class when the Datacurso AI provider is not installed.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->require_provider();
+    }
+
     /**
      * Verify that the task recalculates recommendations for every active user
      * and stores an entry in the cache for each one.

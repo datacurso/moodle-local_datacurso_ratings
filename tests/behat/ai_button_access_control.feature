@@ -20,7 +20,7 @@ Feature: AI analysis button visibility based on capabilities
       | teacher1 | C1     | editingteacher |
       | teacher2 | C1     | editingteacher |
     And the following config values are set as admin:
-      | enabled | 1 | local_datacurso_ratings |
+      | plugin_enabled_local_datacurso_ratings | 1 | aiprovider_datacurso |
 
   @javascript @MDL-INT-017
   Scenario: Teacher with AI capability sees the course AI analysis button
