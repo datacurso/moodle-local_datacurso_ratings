@@ -31,9 +31,6 @@ class tenancy {
     /** @var int Tenant of every user on a site without tenancy. */
     public const NO_TENANT = 0;
 
-    /** @var string Component the tenant settings belong to. */
-    private const COMPONENT = 'local_datacurso_ratings';
-
     /**
      * Tenant a user belongs to.
      *
@@ -48,41 +45,5 @@ class tenancy {
         }
 
         return (int)\tool_tenant\tenancy::get_tenant_id($userid ?? (int)$USER->id);
-    }
-
-    /**
-     * Whether ratings are switched on for a tenant.
-     *
-     * The tenant setting wins; a tenant that never saved one follows the setting of the site.
-     *
-     * @param int|null $tenantid Tenant to answer for; defaults to the tenant of the current user.
-     * @return bool
-     */
-    public static function is_enabled(?int $tenantid = null): bool {
-        $tenantid = $tenantid ?? self::get_tenant_id();
-        $site = get_config(self::COMPONENT, 'enabled');
-
-        if (!class_exists(\aiprovider_datacurso\local\tenant_config::class)) {
-            return (bool)$site;
-        }
-
-        return (bool)\aiprovider_datacurso\local\tenant_config::get(self::COMPONENT, $tenantid, 'enabled', $site);
-    }
-
-    /**
-     * Switch ratings on or off for a tenant.
-     *
-     * Without the tenant configuration of the provider it is the setting of the site.
-     *
-     * @param int $tenantid
-     * @param bool $enabled
-     */
-    public static function set_enabled(int $tenantid, bool $enabled): void {
-        if (!class_exists(\aiprovider_datacurso\local\tenant_config::class)) {
-            set_config('enabled', (int)$enabled, self::COMPONENT);
-            return;
-        }
-
-        \aiprovider_datacurso\local\tenant_config::set(self::COMPONENT, $tenantid, 'enabled', (int)$enabled);
     }
 }

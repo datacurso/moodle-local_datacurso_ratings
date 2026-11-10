@@ -189,5 +189,14 @@ function xmldb_local_datacurso_ratings_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2026100700, 'local', 'datacurso_ratings');
     }
 
+    if ($oldversion < 2026110902) {
+        // The "enabled" switch moved to the Datacurso AI provider, per tenant. The site value and every
+        // stored tenant value are copied into the provider (never over a value it already has), then the
+        // old values of the plugin are deleted.
+        \local_datacurso_ratings\local\plugin_state_migration::migrate();
+
+        upgrade_plugin_savepoint(true, 2026110902, 'local', 'datacurso_ratings');
+    }
+
     return true;
 }

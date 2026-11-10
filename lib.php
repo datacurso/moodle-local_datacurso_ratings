@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use aiprovider_datacurso\local\plugin_settings;
+
 defined('MOODLE_INTERNAL') || die();
 
 require_once(__DIR__ . '/courselib.php');
@@ -34,6 +36,11 @@ require_once(__DIR__ . '/courselib.php');
  * @param context $context The course context.
  */
 function local_datacurso_ratings_extend_navigation_course($navigation, $course, $context) {
+    // No report link while the Datacurso AI provider disables the plugin.
+    if (!plugin_settings::is_enabled('local_datacurso_ratings')) {
+        return;
+    }
+
     // Teachers and managers can see the report.
     if (has_capability('local/datacurso_ratings:viewcoursereport', $context)) {
         // Search especific the nodo of "Reports".

@@ -15,7 +15,7 @@ Feature: Rating widget visibility on supported activity types
       | user     | course | role    |
       | student1 | C1     | student |
     And the following config values are set as admin:
-      | enabled | 1 | local_datacurso_ratings |
+      | plugin_enabled_local_datacurso_ratings | 1 | aiprovider_datacurso |
 
   @javascript @MDL-INT-019
   Scenario Outline: Widget appears on <modtype> activity page

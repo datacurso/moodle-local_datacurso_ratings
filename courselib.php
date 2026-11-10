@@ -22,16 +22,19 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use aiprovider_datacurso\local\plugin_settings;
+
 /**
  * Check if the plugin is enabled for a specific course.
  *
- * Checks both global and course-level settings.
+ * Checks the state of the plugin in the Datacurso AI provider for the tenant of the current user,
+ * then the course-level setting.
  *
  * @param int $courseid The course ID.
  * @return bool True if enabled, false otherwise.
  */
 function local_datacurso_ratings_is_enabled_for_course(int $courseid): bool {
-    if (!\local_datacurso_ratings\local\tenancy::is_enabled()) {
+    if (!plugin_settings::is_enabled('local_datacurso_ratings')) {
         return false;
     }
 

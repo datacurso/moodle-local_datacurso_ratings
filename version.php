@@ -25,11 +25,11 @@
 defined('MOODLE_INTERNAL') || die();
 
 $plugin->component = 'local_datacurso_ratings';
-$plugin->version   = 2026110400;
+$plugin->version   = 2026110902;
 $plugin->requires = 2024100700;
 $plugin->maturity  = MATURITY_STABLE;
-$plugin->release   = '1.1.1-wp';
+$plugin->release   = '1.1.2-wp';
 $plugin->supported = [405, 405];
 $plugin->dependencies = [
-    'aiprovider_datacurso' => 2025100201,
+    'aiprovider_datacurso' => 2026110901,
 ];

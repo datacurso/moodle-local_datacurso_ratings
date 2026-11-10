@@ -16,7 +16,12 @@
 
 namespace local_datacurso_ratings;
 
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
 use local_datacurso_ratings\local\tenancy;
+
+defined('MOODLE_INTERNAL') || die();
+
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 /**
  * Tenancy of the ratings: per tenant on Workplace, a single implicit tenant elsewhere.
@@ -29,25 +34,7 @@ use local_datacurso_ratings\local\tenancy;
  * @covers     \local_datacurso_ratings\recommendations\service
  */
 final class tenancy_test extends \advanced_testcase {
-    /**
-     * A tenant that never saved the switch follows the site; once saved, its own value wins.
-     */
-    public function test_a_tenant_follows_the_site_until_it_saves_its_own_switch(): void {
-        $this->resetAfterTest();
-        if (!class_exists(\aiprovider_datacurso\local\tenant_config::class)) {
-            $this->markTestSkipped('Needs the tenant configuration of the Workplace provider.');
-        }
-
-        set_config('enabled', 1, 'local_datacurso_ratings');
-        $this->assertTrue(tenancy::is_enabled(42));
-
-        tenancy::set_enabled(42, false);
-        $this->assertFalse(tenancy::is_enabled(42));
-        $this->assertTrue(tenancy::is_enabled(7), 'Another tenant still follows the site.');
-
-        set_config('enabled', 0, 'local_datacurso_ratings');
-        $this->assertFalse(tenancy::is_enabled(7));
-    }
+    use provider_dependency_trait;
 
     /**
      * Without tool_tenant every user is in the implicit tenant 0.
@@ -72,6 +59,8 @@ final class tenancy_test extends \advanced_testcase {
         if (!class_exists(\tool_tenant\tenancy::class)) {
             $this->markTestSkipped('Tenants exist only on Moodle Workplace.');
         }
+        // Creating a course runs the course form hook, which asks the Datacurso AI provider.
+        $this->require_provider();
         $this->resetAfterTest();
         $gen = $this->getDataGenerator();
         $tenants = $gen->get_plugin_generator('tool_tenant');
