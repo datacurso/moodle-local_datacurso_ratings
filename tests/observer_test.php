@@ -25,10 +25,13 @@
 
 namespace local_datacurso_ratings;
 
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once($CFG->dirroot . '/course/lib.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 /**
  * Deleting a course module or a course must remove the plugin rows that reference them.
@@ -36,6 +39,16 @@ require_once($CFG->dirroot . '/course/lib.php');
  * @covers \local_datacurso_ratings\observer
  */
 final class observer_test extends \advanced_testcase {
+    use provider_dependency_trait;
+
+    /**
+     * Skip every test of this class when the Datacurso AI provider is not installed.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->require_provider();
+    }
+
     /**
      * Insert a rating record for the given user and course module.
      *

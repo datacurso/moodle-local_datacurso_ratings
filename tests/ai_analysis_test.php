@@ -29,12 +29,14 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once(__DIR__ . '/external_testcase.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 if (!class_exists('aiprovider_datacurso\httpclient\ai_services_api')) {
     require_once(__DIR__ . '/fixtures/ai_services_api_stub.php');
 }
 
 use aiprovider_datacurso\httpclient\ai_services_api;
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
 
 // The testable subclasses must live in this file so the static mock client can
 // be injected into each external function under test.
@@ -100,6 +102,16 @@ class testable_get_ai_analysis_global extends \local_datacurso_ratings\external\
  * @covers \local_datacurso_ratings\external\get_ai_analysis_global
  */
 final class ai_analysis_test extends \externallib_advanced_testcase {
+    use provider_dependency_trait;
+
+    /**
+     * Skip every test of this class when the Datacurso AI provider is not installed.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->require_provider();
+    }
+
     /**
      * Reset all static mock clients after each test to avoid cross-test pollution.
      */

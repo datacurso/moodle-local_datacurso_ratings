@@ -2,6 +2,20 @@
 
 All notable changes to this plugin will be documented in this file.
 
+## [1.1.2] - 2026-11-11
+
+**Compatibility note:** This version is compatible from **Moodle 5.0** to **Moodle 5.3**.
+
+### Changed
+- The plugin follows its state in the Datacurso AI provider (Site administration > AI > Datacurso plugins list). While it is disabled, the report pages and their web services show the provider message, the rating widget and the course settings section are not shown, ratings are rejected, the recommendations task skips its run and logs `task_skipped_plugindisabled`, and the course and admin report links are hidden. The AI analysis buttons of the reports show the provider message as a Moodle notification
+- The "Enable plugin in courses" setting moved to the Datacurso AI provider, which keeps its value. The plugin's own `enabled` setting is removed on upgrade (2026110500). The strings `enableplugin`, `enableplugin_desc` and `enableforcourse_desc` are removed, and `enableforcourse_help` no longer mentions a global switch
+- Requires `aiprovider_datacurso` 2026110900
+- `$plugin->supported` narrowed to `[500, 503]` and `$plugin->requires` raised to Moodle 5.0, because Moodle 4.5 is served by the `MOODLE_405_STABLE` branch
+- CI runs on Jenkins only, against Moodle 5.3 (mariadb)
+
+### Removed
+- GitHub Actions workflows: plugin CI (`plugin-ci.yml`) and the moodle.org release workflow (`moodle-release.yml`)
+
 ## [1.1.1] - 2026-11-04
 
 **Compatibility note:** This version is compatible from **Moodle 4.5** to **Moodle 5.3**.
