@@ -2,7 +2,7 @@
 
 All notable changes to this plugin will be documented in this file.
 
-## [1.1.4] - 2026-11-11
+## [2.0.0] - 2026-11-11
 
 **Compatibility note:** This version is compatible from **Moodle 5.0** to **Moodle 5.3**.
 
