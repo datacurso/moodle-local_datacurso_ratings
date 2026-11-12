@@ -16,7 +16,7 @@ Educators can instantly generate AI-based analyses of student engagement and sat
 
 ## Pre-requisites
 
-1. Moodle 4.5  
+1. Moodle 5.0 to 5.3  
 2. Install the Moodle AI provider **“DataCurso AI Provider”**. Download it for free from [https://moodle.org/plugins/aiprovider_datacurso/versions](https://moodle.org/plugins/aiprovider_datacurso/versions).  
 3. In the **DataCurso AI Provider** settings, configure a valid license key as documented at [https://docs.datacurso.com/index.php?title=Datacurso_AI_Provider#Getting_license_keys](https://docs.datacurso.com/index.php?title=Datacurso_AI_Provider#Getting_license_keys).  
 

@@ -24,6 +24,8 @@
 
 namespace local_datacurso_ratings;
 
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
+
 defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
@@ -31,6 +33,7 @@ require_once($CFG->dirroot . '/backup/util/includes/backup_includes.php');
 require_once($CFG->dirroot . '/backup/util/includes/restore_includes.php');
 require_once($CFG->dirroot . '/local/datacurso_ratings/courselib.php');
 require_once($CFG->dirroot . '/local/datacurso_ratings/backup/moodle2/restore_local_datacurso_ratings_plugin.class.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 /**
  * Test suite for course backup/restore cycle preserving plugin data.
@@ -40,6 +43,16 @@ require_once($CFG->dirroot . '/local/datacurso_ratings/backup/moodle2/restore_lo
  * @covers \restore_local_datacurso_ratings_plugin
  */
 final class backup_restore_test extends \advanced_testcase {
+    use provider_dependency_trait;
+
+    /**
+     * Skip every test of this class when the Datacurso AI provider is not installed.
+     */
+    protected function setUp(): void {
+        parent::setUp();
+        $this->require_provider();
+    }
+
     /**
      * Backs up the given course (including user info) and returns the backup id.
      *

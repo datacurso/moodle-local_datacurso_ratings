@@ -24,6 +24,7 @@
 
 namespace local_datacurso_ratings\hook;
 
+use aiprovider_datacurso\local\plugin_settings;
 use core_course\hook\after_form_definition;
 use core_course\hook\after_form_definition_after_data;
 use core_course\hook\after_form_submission;
@@ -45,7 +46,7 @@ class course_form_hook {
     public static function after_form_definition(after_form_definition $hook): void {
         global $COURSE;
 
-        if (!get_config('local_datacurso_ratings', 'enabled')) {
+        if (!plugin_settings::is_enabled('local_datacurso_ratings')) {
             return;
         }
 
@@ -87,7 +88,7 @@ class course_form_hook {
     public static function after_form_submission(after_form_submission $hook): void {
         global $COURSE;
 
-        if (!get_config('local_datacurso_ratings', 'enabled')) {
+        if (!plugin_settings::is_enabled('local_datacurso_ratings')) {
             return;
         }
 

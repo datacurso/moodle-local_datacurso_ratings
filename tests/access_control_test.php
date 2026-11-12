@@ -28,10 +28,12 @@ defined('MOODLE_INTERNAL') || die();
 
 global $CFG;
 require_once(__DIR__ . '/external_testcase.php');
+require_once(__DIR__ . '/fixtures/provider_dependency_trait.php');
 
 use local_datacurso_ratings\external\get_ratings_report_course;
 use local_datacurso_ratings\external\get_ratings_report;
 use local_datacurso_ratings\external\feedback_service;
+use local_datacurso_ratings\fixtures\provider_dependency_trait;
 
 /**
  * Test suite for access control on AI buttons and admin-only services.
@@ -42,6 +44,8 @@ use local_datacurso_ratings\external\feedback_service;
  * @covers \local_datacurso_ratings\external\get_activity_comments
  */
 final class access_control_test extends \externallib_advanced_testcase {
+    use provider_dependency_trait;
+
     /**
      * Helper: assign a role with specific capabilities in a given context.
      *
@@ -66,6 +70,7 @@ final class access_control_test extends \externallib_advanced_testcase {
      * MDL-INT-017 step 1
      */
     public function test_user_with_generate_capability_gets_ai_flag_true(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
 
         $gen    = $this->getDataGenerator();
@@ -100,6 +105,7 @@ final class access_control_test extends \externallib_advanced_testcase {
      * MDL-INT-017 step 2
      */
     public function test_user_without_generate_capability_gets_ai_flag_false(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
 
         $gen    = $this->getDataGenerator();
@@ -135,6 +141,7 @@ final class access_control_test extends \externallib_advanced_testcase {
      * MDL-INT-017
      */
     public function test_user_with_activity_ai_capability_gets_flag_true(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
 
         $gen    = $this->getDataGenerator();
@@ -165,6 +172,7 @@ final class access_control_test extends \externallib_advanced_testcase {
      * MDL-INT-017
      */
     public function test_user_without_activity_ai_capability_gets_flag_false(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
 
         $gen    = $this->getDataGenerator();
@@ -196,6 +204,7 @@ final class access_control_test extends \externallib_advanced_testcase {
      * MDL-INT-018
      */
     public function test_non_admin_cannot_access_general_ratings_report(): void {
+        $this->require_provider();
         $this->resetAfterTest(true);
 
         $gen  = $this->getDataGenerator();

@@ -16,6 +16,7 @@
 
 namespace local_datacurso_ratings\external;
 
+use aiprovider_datacurso\local\plugin_settings;
 use core_external\external_function_parameters;
 use core_external\external_value;
 use core_external\external_single_structure;
@@ -54,6 +55,7 @@ class get_courses_by_category extends external_api {
         $params = self::validate_parameters(self::execute_parameters(), [
             'categoryid' => $categoryid,
         ]);
+        plugin_settings::require_enabled('local_datacurso_ratings');
 
         // Validate system context.
         $context = context_system::instance();

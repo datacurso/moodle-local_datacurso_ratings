@@ -23,6 +23,10 @@
 
 import Ajax from 'core/ajax';
 import Templates from 'core/templates';
+import Notification from 'core/notification';
+
+/** Error codes the Datacurso AI provider raises when the plugin is disabled. */
+const PLUGIN_DISABLED_ERRORS = ['plugindisabled', 'plugindisabled_admin'];
 
 export const init = () => {
     document.addEventListener('click', async(e) => {
@@ -57,6 +61,12 @@ export const init = () => {
                 }
             })
             .fail(async(e) => {
+                if (PLUGIN_DISABLED_ERRORS.includes(e.errorcode)) {
+                    // The provider message may hold a link for admins: show it as a Moodle notification.
+                    resultContainer.innerHTML = '';
+                    Notification.exception(e);
+                    return;
+                }
                 responseAi.loading = false;
                 responseAi.success = false;
                 responseAi.message = e.message;

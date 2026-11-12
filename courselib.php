@@ -22,6 +22,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use aiprovider_datacurso\local\plugin_settings;
+
 /**
  * Check if the plugin is enabled for a specific course.
  *
@@ -33,7 +35,7 @@
 function local_datacurso_ratings_is_enabled_for_course(int $courseid): bool {
     global $DB;
 
-    if (!get_config('local_datacurso_ratings', 'enabled')) {
+    if (!plugin_settings::is_enabled('local_datacurso_ratings')) {
         return false;
     }
 

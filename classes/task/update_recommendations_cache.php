@@ -16,6 +16,8 @@
 
 namespace local_datacurso_ratings\task;
 
+use aiprovider_datacurso\local\plugin_settings;
+
 /**
  * Scheduled task to refresh recommendations cache.
  *
@@ -38,6 +40,12 @@ class update_recommendations_cache extends \core\task\scheduled_task {
      */
     public function execute() {
         global $DB;
+
+        // Skip instead of throwing, so the task is not retried while the plugin is disabled.
+        if (!plugin_settings::is_enabled('local_datacurso_ratings')) {
+            mtrace(get_string('task_skipped_plugindisabled', 'local_datacurso_ratings'));
+            return;
+        }
 
         mtrace("Updating recommendations cache...");
 
