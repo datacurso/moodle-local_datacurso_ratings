@@ -2,6 +2,17 @@
 
 All notable changes to this plugin will be documented in this file.
 
+## [1.1.3] - 2026-11-11
+
+**Compatibility note:** This version is compatible only with **Moodle 4.5**.
+
+### Changed
+- `$plugin->supported` narrowed to `[405, 405]`: this branch (`MOODLE_405_STABLE`) serves Moodle 4.5 only and requires `aiprovider_datacurso` 2026110400 from the provider's Moodle 4.5 line. Moodle 5.0 to 5.3 are served by `MOODLE_503_STABLE` and Moodle Workplace 4.5 by `WORKPLACE_405_STABLE`
+- CI runs on Jenkins only, against Moodle 4.5 (mariadb and pgsql)
+
+### Removed
+- GitHub Actions workflows: plugin CI (`plugin-ci.yml`) and the moodle.org release workflow (`moodle-release.yml`)
+
 ## [1.1.2] - 2026-11-06
 
 **Compatibility note:** This version is compatible from **Moodle 4.5** to **Moodle 5.3**.
