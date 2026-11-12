@@ -2,6 +2,16 @@
 
 All notable changes to this plugin will be documented in this file.
 
+## [1.1.3-wp] - 2026-11-11
+
+**Compatibility note:** This version is compatible only with **Moodle Workplace 4.5**.
+
+### Changed
+- CI runs on Jenkins only, against Moodle 4.5 (`moodleBranch: 'MOODLE_405_STABLE'`), matching `$plugin->supported = [405, 405]`
+
+### Removed
+- GitHub Actions plugin CI workflow (`plugin-ci.yml`), which also ran Moodle 5.0 and 5.1, not supported by this branch
+
 ## [1.1.2-wp] - 2026-11-09
 
 **Compatibility note:** This version is compatible only with **Moodle Workplace 4.5**.
